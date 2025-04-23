@@ -1,0 +1,29 @@
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.out
+*.test
+
+# Build directories
+bin/
+build/
+
+# Data 
+data/
+!data/README.md
+
+# Go modules
+/vendor/
+
+# Environment files
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS temp files
+.DS_Store

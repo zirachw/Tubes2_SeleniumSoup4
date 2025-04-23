@@ -52,3 +52,41 @@
 [Next-url]: https://nextjs.org/
 [React-url]: https://react.dev/
 [Go-url]: https://go.dev/
+
+
+---
+
+## ️Running Locally
+
+### Docker Compose (recommended)
+```bash
+# from project root
+docker-compose up --build
+```
+
+> [!NOTE]  
+> A docker engine instance must be running (usually via Docker Desktop)
+
+Then:
+- Frontend at http://localhost:3000
+- Backend API at http://localhost:8080
+
+
+### Manual (no Docker)
+
+1. **Backend**
+   ```bash
+   cd src/backend
+   go run ./cmd/server
+   ```
+   > Runs on port 8080 by default.
+
+2. **Frontend**
+   ```bash
+   cd src/frontend
+   npm install
+   npm run dev
+   ```
+   > Opens at http://localhost:3000, API proxy to http://localhost:8080
+
+---
