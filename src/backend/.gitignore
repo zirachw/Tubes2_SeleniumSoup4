@@ -12,7 +12,7 @@ bin/
 build/
 
 # Data 
-data/
+data/*
 !data/README.md
 
 # Go modules
