@@ -19,6 +19,14 @@ func makeRecipeHandler(data map[string]scraper.ElementData) func(w http.Response
 		if algo == "" {
 			algo = "bfs"
 		}
+		all := q.Get("all")
+		if all == "" {
+			all = "false"
+		}
+		if all == "true" {
+			//cari semua
+			return
+		}
 		limStr := q.Get("limit")
 		if limStr == "" {
 			limStr = "10"
