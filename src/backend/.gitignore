@@ -13,7 +13,6 @@ build/
 
 # Data 
 data/*
-!data/README.md
 
 # Go modules
 /vendor/

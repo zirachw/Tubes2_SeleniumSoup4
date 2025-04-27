@@ -1,1 +1,0 @@
-# Folder for storing scraping result
