@@ -14,9 +14,9 @@ import (
 
 // ElementData holds recipes, image link, and tier for an element.
 type ElementData struct {
-	Tier      int        `json:"tier"`
-	ImageLink string     `json:"imageLink"`
-	Recipes   [][]string `json:"recipes"`
+	Tier      int         `json:"tier"`
+	ImageLink string      `json:"imageLink"`
+	Recipes   [][2]string `json:"recipes"`
 }
 
 // Run scrapes the Elements page, captures each element's tier, recipes, and image,
@@ -85,7 +85,7 @@ func Run() map[string]ElementData {
 			imgLink, _ := cell.Find("a.mw-file-description.image").Attr("href")
 
 			// Collect recipe pairs, skipping any "Time"
-			var recipes [][]string
+			var recipes [][2]string
 			row.Find("td").Eq(1).Find("ul li").Each(func(_ int, li *goquery.Selection) {
 				var ings []string
 				li.Find("a[title]").Each(func(_ int, s *goquery.Selection) {
@@ -95,7 +95,7 @@ func Run() map[string]ElementData {
 					}
 				})
 				if len(ings) >= 2 {
-					recipes = append(recipes, []string{ings[0], ings[1]})
+					recipes = append(recipes, [2]string{ings[0], ings[1]})
 				}
 			})
 
