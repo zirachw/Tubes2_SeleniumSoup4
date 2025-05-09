@@ -6,88 +6,121 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
-	"time"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
+// ElementData holds recipes, image link, and tier for an element.
 type ElementData struct {
-	Recipes   [][]string `json:"recipes"`
-	ImageLink string     `json:"imageLink"`
+    Tier      int        `json:"tier"`
+    ImageLink string     `json:"imageLink"`
+    Recipes   [][]string `json:"recipes"`
 }
 
+// Run scrapes the Elements page, captures each element's tier, recipes, and image, 
+// then writes the results to data/recipes.json.
 func Run() map[string]ElementData {
-	const indexURL = "https://little-alchemy.fandom.com/wiki/Elements_(Little_Alchemy_2)"
-	req, _ := http.NewRequest("GET", indexURL, nil)
-	req.Header.Set("User-Agent", "Mozilla/5.0")
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		log.Fatalf("fetch index: %v", err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("bad status %d", resp.StatusCode)
-	}
+    const indexURL = "https://little-alchemy.fandom.com/wiki/Elements_(Little_Alchemy_2)"
+    req, _ := http.NewRequest("GET", indexURL, nil)
+    req.Header.Set("User-Agent", "Mozilla/5.0")
+    resp, err := http.DefaultClient.Do(req)
+    if err != nil {
+        log.Fatalf("failed to fetch index: %v", err)
+    }
+    defer resp.Body.Close()
+    if resp.StatusCode != http.StatusOK {
+        log.Fatalf("bad status %d", resp.StatusCode)
+    }
 
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
-	if err != nil {
-		log.Fatalf("parse index: %v", err)
-	}
+    doc, err := goquery.NewDocumentFromReader(resp.Body)
+    if err != nil {
+        log.Fatalf("failed to parse index: %v", err)
+    }
 
-	table := doc.Find("table.list-table.col-list.icon-hover")
-	if table.Length() == 0 {
-		log.Fatal("index table not found")
-	}
-	all := make(map[string]ElementData)
-	table.Find("tbody tr").Each(func(i int, row *goquery.Selection) {
-		if i == 0 {
-			return
-		}
-		cell := row.Find("td").Eq(0)
-		link := cell.Find("a[title]").First()
-		name := strings.TrimSpace(link.Text())
-		if name == "" {
-			return
-		}
-		if name == "Time" || name == "Ruins" || name == "Archeologist" {
-			fmt.Printf("→ Skipping %s (excluded by exception rule)\n", name)
-			return
-		}
-		imgHref, _ := cell.Find("a.mw-file-description.image").Attr("href")
-		var recipes [][]string
-		row.Find("td").Eq(1).Find("ul li").Each(func(_ int, li *goquery.Selection) {
-			var ings []string
-			li.Find("a[title]").Each(func(_ int, s *goquery.Selection) {
-				txt := strings.TrimSpace(s.Text())
-				if txt != "" {
-					ings = append(ings, txt)
-				}
-			})
-			if len(ings) >= 2 && ings[0] != "Time" && ings[1] != "Time" {
-				recipes = append(recipes, []string{ings[0], ings[1]})
-			}
-		})
-		all[name] = ElementData{
-			Recipes:   recipes,
-			ImageLink: imgHref,
-		}
-		// fmt.Printf("→ %s: %d recipes, image %s\n", name, len(recipes), imgHref)
-	})
-	out, err := os.Create("data/recipes.json")
-	if err != nil {
-		log.Fatalf("create file: %v", err)
-	}
-	defer out.Close()
+    all := make(map[string]ElementData)
 
-	enc := json.NewEncoder(out)
-	enc.SetIndent("", "  ")
-	if err := enc.Encode(all); err != nil {
-		log.Fatalf("encode JSON: %v", err)
-	}
+    // Iterate each section headline (Starting_elements, Tier_X_elements)
+    doc.Find("span.mw-headline").Each(func(_ int, sel *goquery.Selection) {
+        id, _ := sel.Attr("id")
+        // Determine tier: 0 for Starting_elements, N for Tier_N_elements
+        var tier int
+        switch {
+        case id == "Starting_elements":
+            tier = 0
+        case strings.HasPrefix(id, "Tier_"):
+            parts := strings.Split(id, "_")
+            if len(parts) >= 2 {
+                if n, err := strconv.Atoi(parts[1]); err == nil {
+                    tier = n
+                } else {
+                    return
+                }
+            } else {
+                return
+            }
+        default:
+            return
+        }
 
-	fmt.Printf("Done: wrote %d elements to data/recipes.json\n", len(all))
-	fmt.Println("Scraping completed at:", time.Now().Format(time.RFC1123))
+        // Find the first table after this headline
+        table := sel.Closest("h3").NextAll().Filter("table.list-table.col-list.icon-hover").First()
+        if table.Length() == 0 {
+            return
+        }
 
-	return all
+        // Iterate rows in this tier table
+        table.Find("tbody tr").Each(func(i int, row *goquery.Selection) {
+            if i == 0 {
+                return // skip header
+            }
+            cell := row.Find("td").Eq(0)
+            link := cell.Find("a[title]").First()
+            name := strings.TrimSpace(link.Text())
+            if name == "" || name == "Time" || name == "Ruins" || name == "Archeologist" {
+                return
+            }
+
+            imgLink, _ := cell.Find("a.mw-file-description.image").Attr("href")
+
+            // Collect recipe pairs, skipping any "Time"
+            var recipes [][]string
+            row.Find("td").Eq(1).Find("ul li").Each(func(_ int, li *goquery.Selection) {
+                var ings []string
+                li.Find("a[title]").Each(func(_ int, s *goquery.Selection) {
+                    txt := strings.TrimSpace(s.Text())
+                    if txt != "" && txt != "Time" {
+                        ings = append(ings, txt)
+                    }
+                })
+                if len(ings) >= 2 {
+                    recipes = append(recipes, []string{ings[0], ings[1]})
+                }
+            })
+
+            all[name] = ElementData{
+                Tier:      tier,
+                ImageLink: imgLink,
+                Recipes:   recipes,
+            }
+            fmt.Printf("→ %s (tier %d): %d recipes\n", name, tier, len(recipes))
+        })
+    })
+
+    // Write output JSON
+    outFile, err := os.Create("data/recipes.json")
+    if err != nil {
+        log.Fatalf("create file: %v", err)
+    }
+    defer outFile.Close()
+
+    encoder := json.NewEncoder(outFile)
+    encoder.SetIndent("", "  ")
+    if err := encoder.Encode(all); err != nil {
+        log.Fatalf("encode JSON: %v", err)
+    }
+
+    fmt.Printf("Done: wrote %d elements to data/recipes.json\n", len(all))
+    return all
 }
