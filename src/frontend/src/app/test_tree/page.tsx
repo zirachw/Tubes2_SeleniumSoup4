@@ -28,7 +28,6 @@ const nodeTypes = {
 // Initialize ELK
 const elk = new ELK();
 
-// 1) Compute a new ELK layout
 const getLayoutedElements = async (
   nodes: Node[],
   edges: Edge[],
@@ -70,7 +69,6 @@ const getLayoutedElements = async (
   return { nodes: layoutedNodes, edges };
 };
 
-// 2) Tween between old & new positions
 const animateLayout = (
   startNodes: Node[],
   endNodes: Node[],
@@ -117,7 +115,6 @@ interface ElementData {
 
 type MyData = Record<string, ElementData>;
 
-// 3) Next.js page with React Flow
 const FlowPage = () => {
   const [nodes, setNodes] = useState<Node[]>([
     {
@@ -135,7 +132,7 @@ const FlowPage = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const localData = localStorage.getItem('myData');
+      const localData = localStorage.getItem("myData");
       if (localData) {
         try {
           const parsed = JSON.parse(localData) as MyData;
@@ -143,18 +140,18 @@ const FlowPage = () => {
           setLoading(false);
           return;
         } catch (err) {
-          console.error('Invalid JSON in localStorage:', err);
-          localStorage.removeItem('myData');
+          console.error("Invalid JSON in localStorage:", err);
+          localStorage.removeItem("myData");
         }
       }
 
       try {
-        const response = await fetch('localhost:8080/data'); // replace with actual API
+        const response = await fetch("http://localhost:8080/api/data"); // replace with actual API later
         const result = await response.json();
-        localStorage.setItem('myData', JSON.stringify(result));
+        localStorage.setItem("myData", JSON.stringify(result));
         setData(result);
       } catch (err) {
-        console.error('Failed to fetch data:', err);
+        console.error("Failed to fetch data:", err);
       } finally {
         setLoading(false);
       }
@@ -212,12 +209,12 @@ const FlowPage = () => {
   // Add a node under its parent, then relayout + fitView
   const addNode = useCallback(() => {
     // pick a random parent couple
-      const keys = Object.keys(data || {});
-  if (keys.length === 0) {
-    return undefined; // Return undefined for empty dictionaries
-  }
-  const randomIndex = Math.floor(Math.random() * keys.length);
-  const randomKey = keys[randomIndex];
+    const keys = Object.keys(data || {});
+    if (keys.length === 0) {
+      return undefined; // Return undefined for empty dictionaries
+    }
+    const randomIndex = Math.floor(Math.random() * keys.length);
+    const randomKey = keys[randomIndex];
     const parentId = nodes[Math.floor(Math.random() * nodes.length)].id;
     const id = `couple_${nodeCountRef.current++}`;
     const leftLabel = data![randomKey].recipes[0][0];
@@ -248,11 +245,6 @@ const FlowPage = () => {
         width: 10,
         height: 10,
       },
-      markerEnd: {
-        type: MarkerType.ArrowClosed,
-        
-      }
-      ,
       style: {
         strokeWidth: 2,
       },
@@ -266,8 +258,6 @@ const FlowPage = () => {
 
     setTimeout(() => layoutFlow("DOWN", newNodes, newEdges), 0);
   }, [nodes, edges, layoutFlow]);
-
-  // …inside FlowPage, alongside your addNode…
 
   const deleteNode = useCallback(() => {
     // don’t delete the only node
@@ -316,6 +306,8 @@ const FlowPage = () => {
     // re‑layout so things stay neat
     setTimeout(() => layoutFlow("DOWN", newNodes, newEdges), 0);
   }, [nodes, edges, layoutFlow]);
+
+  if (loading) return <p>Loading...</p>;
 
   return (
     <ReactFlowProvider>
