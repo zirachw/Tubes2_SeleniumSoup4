@@ -82,7 +82,7 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	// Run the scraper and get the data map
-	data := scraper.Run()
+	data := scraper.Run(false)
 
 	// Print out the number of elements collected
 	fmt.Printf("Successfully collected data for %d elements\n", len(data))
