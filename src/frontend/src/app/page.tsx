@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import Sidebar from './components/Sidebar';
+import Sidebar from '../components/Sidebar';
 
 interface ElementData {
   tier: number;
@@ -70,8 +70,8 @@ const Page: React.FC = () => {
             <circle cx="150" cy="140" r="5" fill="black" />
           </svg>
         </div>
-        <h1 className="text-3xl font-bold mb-4">Welcome back to Master Alchemy V2</h1>
-        <div className="text-sm absolute bottom-4 right-4">Copyright: SeleniumSoup4</div>
+        <h1 className="text-3xl text-black font-[Georgia] mb-4">Welcome back to Master Alchemy V2</h1>
+        <div className="text-sm text-black font-[Georgia] absolute bottom-4 right-4">Copyright: SeleniumSoup4</div>
       </div>
 
       {/* Sidebar Toggle Button - visible when sidebar is closed */}
