@@ -1,103 +1,100 @@
-import Image from "next/image";
+"use client";
+import React, { useState, useEffect } from 'react';
+import Sidebar from '../components/Sidebar';
 
-export default function Home() {
+interface ElementData {
+  tier: number;
+  imageLink: string;
+  recipes: string[][];
+}
+
+interface ElementsData {
+  [elementName: string]: ElementData;
+}
+
+const Page: React.FC = () => {
+  // State for sidebar
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  
+  // State for elements data
+  const [elementsData, setElementsData] = useState<ElementsData>({});
+  const [loading, setLoading] = useState(true);
+
+  // Fetch elements data on component mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch('http://localhost:8080/api/data');
+        if (!response.ok) {
+          throw new Error('Failed to fetch elements data');
+        }
+        const data = await response.json();
+        setElementsData(data);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Toggle sidebar visibility
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+    <div className="flex min-h-screen bg-white">
+      {/* Main content */}
+      <div className="flex-1 flex flex-col items-center justify-center">
+        {/* Logo */}
+        <div className="mb-8">
+          <svg viewBox="0 0 200 200" className="w-32 h-32">
+            <path
+              d="M100,20 C146.5,20 185,58.5 185,105 C185,151.5 146.5,190 100,190 C53.5,190 15,151.5 15,105 C15,58.5 53.5,20 100,20 Z"
+              fill="none"
+              stroke="black"
+              strokeWidth="5"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <path
+              d="M70,65 C70,55 80,45 90,45 C100,45 110,55 110,65 L110,120 C110,130 120,140 130,140 C140,140 150,130 150,120 L150,65"
+              fill="none"
+              stroke="black"
+              strokeWidth="5"
+            />
+            <circle cx="70" cy="120" r="5" fill="black" />
+            <circle cx="110" cy="140" r="5" fill="black" />
+            <circle cx="70" cy="140" r="5" fill="black" />
+            <circle cx="150" cy="140" r="5" fill="black" />
+          </svg>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+        <h1 className="text-3xl text-black font-[Georgia] mb-4">Welcome back to Master Alchemy V2</h1>
+        <div className="text-sm text-black font-[Georgia] absolute bottom-4 right-4">Copyright: SeleniumSoup4</div>
+      </div>
+
+      {/* Sidebar Toggle Button - visible when sidebar is closed */}
+      {!sidebarOpen && (
+        <button 
+          onClick={toggleSidebar} 
+          className="fixed top-4 left-4 z-20 bg-gray-700 p-2 rounded"
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          <svg viewBox="0 0 24 24" fill="white" className="w-6 h-6">
+            <path d="M4 6h16M4 12h16M4 18h16" stroke="white" strokeWidth="2"/>
+          </svg>
+        </button>
+      )}
+
+      {/* Sidebar Component */}
+      <Sidebar 
+        isOpen={sidebarOpen} 
+        onToggle={toggleSidebar}
+        elementsData={elementsData}
+        loading={loading}
+      />
     </div>
   );
-}
+};
+
+export default Page;

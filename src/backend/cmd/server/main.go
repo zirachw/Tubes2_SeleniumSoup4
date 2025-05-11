@@ -74,7 +74,12 @@ func makeRecipeHandler(data map[string]scraper.ElementData) func(w http.Response
 }
 
 func dataHandler(w http.ResponseWriter, r *http.Request) {
-	file, err := os.Open("../../data/recipes.json")
+
+    w.Header().Set("Access-Control-Allow-Origin", "*") 
+    w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+    w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	file, err := os.Open("data/recipes.json")
 	if err != nil {
 		http.Error(w, "File not found.", http.StatusNotFound)
 		return
@@ -91,7 +96,7 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	// Run the scraper and get the data map
-	data := scraper.Run()
+	data := scraper.Run(false)
 
 	// Print out the number of elements collected
 	fmt.Printf("Successfully collected data for %d elements\n", len(data))
