@@ -19,11 +19,8 @@ import ReactFlow, {
   MarkerType,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import CoupleNode from "@/components/CoupleNode";
-
-const nodeTypes = {
-  couple: CoupleNode,
-};
+import { CoupleNode } from "@/components";
+import { ElementsData } from "@/types";
 
 // Initialize ELK
 const elk = new ELK();
@@ -107,15 +104,16 @@ const animateLayout = (
   requestAnimationFrame(frame);
 };
 
-interface ElementData {
-  tier: number;
-  imageLink: string;
-  recipes: [string, string][];
+const nodeTypes = {
+  couple: CoupleNode,
+};
+
+interface TreeViewerProps {
+  elementsData: ElementsData;
+  loading: boolean;
 }
 
-type MyData = Record<string, ElementData>;
-
-const FlowPage = () => {
+const TreeViewer: React.FC<TreeViewerProps> = ({ elementsData, loading }) => {
   const [nodes, setNodes] = useState<Node[]>([
     {
       id: "root",
@@ -126,39 +124,7 @@ const FlowPage = () => {
     },
   ]);
   const [edges, setEdges] = useState<Edge[]>([]);
-  const [data, setData] = useState<MyData | null>(null);
   const nodeCountRef = useRef(1);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const localData = localStorage.getItem("myData");
-      if (localData) {
-        try {
-          const parsed = JSON.parse(localData) as MyData;
-          setData(parsed);
-          setLoading(false);
-          return;
-        } catch (err) {
-          console.error("Invalid JSON in localStorage:", err);
-          localStorage.removeItem("myData");
-        }
-      }
-
-      try {
-        const response = await fetch("http://localhost:8080/api/data"); // replace with actual API later
-        const result = await response.json();
-        localStorage.setItem("myData", JSON.stringify(result));
-        setData(result);
-      } catch (err) {
-        console.error("Failed to fetch data:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
 
   // Keep React Flow instance
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
@@ -209,7 +175,7 @@ const FlowPage = () => {
   // Add a node under its parent, then relayout + fitView
   const addNode = useCallback(() => {
     // pick a random parent couple
-    const keys = Object.keys(data || {});
+    const keys = Object.keys(elementsData || {});
     if (keys.length === 0) {
       return undefined; // Return undefined for empty dictionaries
     }
@@ -217,10 +183,12 @@ const FlowPage = () => {
     const randomKey = keys[randomIndex];
     const parentId = nodes[Math.floor(Math.random() * nodes.length)].id;
     const id = `couple_${nodeCountRef.current++}`;
-    const leftLabel = data![randomKey].recipes[0][0];
-    const rightLabel = data![randomKey].recipes[0][1];
-    const leftImageLink = data![data![randomKey].recipes[0][0]].imageLink;
-    const rightImageLink = data![data![randomKey].recipes[0][1]].imageLink;
+    const leftLabel = elementsData![randomKey].recipes[0][0];
+    const rightLabel = elementsData![randomKey].recipes[0][1];
+    const leftImageLink =
+      elementsData![elementsData![randomKey].recipes[0][0]].imageLink;
+    const rightImageLink =
+      elementsData![elementsData![randomKey].recipes[0][1]].imageLink;
 
     const parent = nodes.find((n) => n.id === parentId)!;
     const { x: px, y: py } = parent.position;
@@ -235,19 +203,23 @@ const FlowPage = () => {
       width: 2 * 70 + 12 + 2 * 8, // = 168
       height: 40 + 2 * 8, // = 56
     };
+
+    const isLeft = Math.random() < 0.5;
+    const sourceHandle = isLeft ? "left-child" : "right-child";
+
     const newEdge: Edge = {
       id: `e_${parentId}_${id}`,
       source: parentId,
-      type: "smoothstep",
+      sourceHandle,
       target: id,
+      targetHandle: "parent",
+      type: "smoothstep",
       markerStart: {
         type: MarkerType.ArrowClosed,
         width: 10,
         height: 10,
       },
-      style: {
-        strokeWidth: 2,
-      },
+      style: { strokeWidth: 2 },
     };
 
     const newNodes = [...nodes, newNode];
@@ -335,4 +307,4 @@ const FlowPage = () => {
   );
 };
 
-export default FlowPage;
+export default TreeViewer;
