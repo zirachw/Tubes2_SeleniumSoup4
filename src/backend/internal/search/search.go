@@ -162,10 +162,6 @@ func DFSSearch(recipe map[string]scraper.ElementData, element string,
 	}
 }
 
-func BFSSearch(recipe map[string]scraper.ElementData, element string,
-	nSolution int, solved map[string]Tree, tree *Tree) {
-}
-
 func ParallelDFSSearch(recipe map[string]scraper.ElementData, element string,
 	nSolution int, solved map[string]Tree, tree *Tree) {
 
