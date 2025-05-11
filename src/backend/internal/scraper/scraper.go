@@ -80,35 +80,7 @@ func Run(updateMAM bool) map[string]ElementData {
     }
     fmt.Printf("Wrote %d Little Alchemy 2 elements\n", len(laMap))
 
-    // 3) Clean by tier: remove recipes where any ingredient has higher tier than the element
-    cleanedMap := make(map[string]ElementData, len(laMap))
-    for name, data := range laMap {
-        var tierFiltered [][2]string
-        for _, pair := range data.Recipes {
-            ing1, ing2 := pair[0], pair[1]
-            tier1 := 0
-            if d, ok := laMap[ing1]; ok {
-                tier1 = d.Tier
-            }
-            tier2 := 0
-            if d, ok := laMap[ing2]; ok {
-                tier2 = d.Tier
-            }
-            if tier1 < data.Tier && tier2 < data.Tier {
-                tierFiltered = append(tierFiltered, pair)
-            }
-        }
-        data.Recipes = tierFiltered
-        cleanedMap[name] = data
-    }
-
-    // Write cleaned by tier JSON
-    if err := writeJSON("data/recipes_cleaned.json", cleanedMap); err != nil {
-        log.Fatalf("failed to write cleaned JSON: %v", err)
-    }
-    fmt.Printf("Wrote %d cleaned elements to data/recipes_cleaned.json\n", len(cleanedMap))
-
-    return cleanedMap
+    return laMap
 }
 
 // scrapePage fetches and parses a page using the given table selector.
