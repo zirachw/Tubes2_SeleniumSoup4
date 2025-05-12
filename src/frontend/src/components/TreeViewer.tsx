@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import ELK from "elkjs/lib/elk.bundled.js";
 import ReactFlow, {
   ReactFlowProvider,
@@ -23,7 +23,11 @@ import { CoupleNode } from "@/components";
 import { ElementsData } from "@/types";
 import { BOX_HEIGHT, BOX_WIDTH, GAP, PADDING } from "./CoupleNode";
 
-// Initialize ELK
+const edgeColorDefault = "#b1b1b7";
+const edgeColorHighlight = "#4ade80";
+const edgeWidthDefault = 2;
+const edgeWidthHighlight = 4;
+
 const elk = new ELK();
 
 const getLayoutedElements = async (
@@ -169,6 +173,74 @@ const TreeViewer: React.FC<TreeViewerProps> = ({ elementsData, loading }) => {
 
   // Keep React Flow instance
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
+
+  const findAncestorEdges = useCallback((nodeId: string, allEdges: Edge[]) => {
+    const visited = new Set<string>();
+    const highlight = new Set<string>();
+    function traverse(id: string) {
+      allEdges.forEach((e) => {
+        if (e.target === id && !visited.has(e.id)) {
+          visited.add(e.id);
+          highlight.add(e.id);
+          traverse(e.source);
+        }
+      });
+    }
+    traverse(nodeId);
+    return Array.from(highlight);
+  }, []);
+
+  const findDescendantEdges = useCallback(
+    (nodeId: string, allEdges: Edge[]) => {
+      const visited = new Set<string>();
+      const highlight = new Set<string>();
+      function traverse(id: string) {
+        allEdges.forEach((e) => {
+          if (e.source === id && !visited.has(e.id)) {
+            visited.add(e.id);
+            highlight.add(e.id);
+            traverse(e.target);
+          }
+        });
+      }
+      traverse(nodeId);
+      return Array.from(highlight);
+    },
+    []
+  );
+
+  const onNodeMouseEnter = useCallback(
+    (_: React.MouseEvent, node: Node) => {
+      const downIds = findDescendantEdges(node.id, edges);
+
+      const upIds = findAncestorEdges(node.id, edges);
+
+      const ids = Array.from(new Set([...downIds, ...upIds]));
+
+      setEdges((es) =>
+        es.map((e) => ({
+          ...e,
+          style: {
+            ...e.style,
+            stroke: ids.includes(e.id) ? edgeColorHighlight : edgeColorDefault,
+            strokeWidth: ids.includes(e.id)
+              ? edgeWidthHighlight
+              : edgeWidthDefault,
+          },
+        }))
+      );
+    },
+    [edges, findDescendantEdges, findAncestorEdges]
+  );
+
+  const onNodeMouseLeave = useCallback(() => {
+    setEdges((es) =>
+      es.map((e) => ({
+        ...e,
+        style: { stroke: edgeColorDefault, strokeWidth: edgeWidthDefault },
+      }))
+    );
+  }, []);
 
   // Capture instance on init
   const onInit = useCallback((instance: ReactFlowInstance) => {
@@ -356,6 +428,8 @@ const TreeViewer: React.FC<TreeViewerProps> = ({ elementsData, loading }) => {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onNodeMouseEnter={onNodeMouseEnter}
+          onNodeMouseLeave={onNodeMouseLeave}
         >
           <Controls />
           <Background />
