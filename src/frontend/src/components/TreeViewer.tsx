@@ -21,6 +21,7 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 import { CoupleNode } from "@/components";
 import { ElementsData } from "@/types";
+import { BOX_HEIGHT, BOX_WIDTH, GAP, PADDING } from "./CoupleNode";
 
 // Initialize ELK
 const elk = new ELK();
@@ -30,38 +31,74 @@ const getLayoutedElements = async (
   edges: Edge[],
   direction = "DOWN"
 ) => {
+  const rightSideNodes = new Set<string>();
+  edges.forEach((edge) => {
+    if (edge.sourceHandle?.includes("right-child-")) {
+      rightSideNodes.add(edge.target);
+    }
+  });
+
   const graph = {
     id: "root",
     layoutOptions: {
       "elk.algorithm": "layered",
       "elk.direction": direction,
-      "elk.spacing.nodeNode": "50",
-      "elk.layered.spacing.nodeNodeBetweenLayers": "50",
-      // lock ports so edges leave exactly from the port coordinates
-      "elk.portConstraints": "FIXED_POS",
+      "elk.spacing.nodeNode": "80", // more horizontal gap
+      "elk.layered.spacing.nodeNodeBetweenLayers": "80", // more vertical gap
+      "elk.layered.spacing.edgeNode": "40", // space edges around nodes
+      "elk.layered.spacing.edgeEdge": "20", // space parallel edges
+      "elk.layered.nodePlacement.strategy": "SIMPLE",
       // still bias toward straight edges
-      "elk.layered.nodePlacement.favorStraightEdges": "true",
+      // "elk.layered.nodePlacement.favorStraightEdges": "true",
     },
-    children: nodes.map((n) => ({
-      id: n.id,
-      width: n.width || 150,
-      height: n.height || 50,
-    })),
+    children: nodes.map((n) => {
+      const targetPorts = n.data.targetHandles.map((t: { id: string }) => ({
+        id: t.id,
+
+        // NOTES: it's important to let elk know on which side the port is
+        properties: {
+          side: "NORTH",
+        },
+      }));
+
+      const sourcePorts = n.data.sourceHandles.map((s: { id: string }) => ({
+        id: s.id,
+        properties: {
+          side: "SOUTH",
+        },
+      }));
+
+      return {
+        id: n.id,
+        width: n.width ?? 150,
+        height: n.height ?? 50,
+        // ️NOTES: we need to tell elk that the ports are fixed, in order to reduce edge crossings
+        properties: {
+          "org.eclipse.elk.portConstraints": "FIXED_ORDER",
+        },
+        // we are also passing the id, so we can also handle edges without a sourceHandle or targetHandle option
+        ports: [{ id: n.id }, ...targetPorts, ...sourcePorts],
+      };
+    }),
     edges: edges.map((e) => ({
       id: e.id,
-      sources: [e.source],
-      targets: [e.target],
+      sources: [e.sourceHandle || e.source],
+      targets: [e.targetHandle || e.target],
     })),
   };
 
   const { children: layoutedChildren = [] } = await elk.layout(graph);
-  const layoutedNodes = layoutedChildren.map((n) => ({
-    id: n.id,
-    position: { x: n.x || 0, y: n.y || 0 },
-    data: { label: n.id },
-    width: n.width,
-    height: n.height,
-  }));
+  const layoutedNodes = layoutedChildren.map((n) => {
+    const yOffset = rightSideNodes.has(n.id) ? 30 : 0; // add extra vertical offset for right-side nodes
+
+    return {
+      id: n.id,
+      position: { x: n.x || 0, y: (n.y || 0) + yOffset },
+      data: nodes.find((node) => node.id === n.id)?.data || { label: n.id },
+      width: n.width,
+      height: n.height,
+    };
+  });
 
   return { nodes: layoutedNodes, edges };
 };
@@ -117,7 +154,11 @@ const TreeViewer: React.FC<TreeViewerProps> = ({ elementsData, loading }) => {
   const [nodes, setNodes] = useState<Node[]>([
     {
       id: "root",
-      data: { label: "Root" },
+      data: {
+        label: "Root",
+        targetHandles: [],
+        sourceHandles: [{ id: "parent-root" }],
+      },
       position: { x: 0, y: 0 },
       width: 150,
       height: 50,
@@ -197,22 +238,39 @@ const TreeViewer: React.FC<TreeViewerProps> = ({ elementsData, loading }) => {
     const newNode: Node = {
       id,
       type: "couple",
-      data: { leftLabel, rightLabel, leftImageLink, rightImageLink },
+      data: {
+        leftLabel,
+        rightLabel,
+        leftImageLink,
+        rightImageLink,
+        id,
+        targetHandles: [{ id: `parent-${id}` }],
+        sourceHandles: [
+          { id: `left-child-${id}` },
+          { id: `right-child-${id}` },
+        ],
+      },
       position: { x: px, y: py + ph + 50 },
       // must match containerStyle dimensions:
-      width: 2 * 70 + 12 + 2 * 8, // = 168
-      height: 40 + 2 * 8, // = 56
+      width: 2 * BOX_WIDTH + GAP + 5 * PADDING,
+      height: BOX_HEIGHT + 2 * PADDING,
     };
 
     const isLeft = Math.random() < 0.5;
-    const sourceHandle = isLeft ? "left-child" : "right-child";
+    const sourceHandle = isLeft
+      ? "left-child-" + parentId
+      : "right-child-" + parentId;
+    // handle source if parent is root
+    const sourceHandleRoot = isLeft ? "parent-root" : "parent-root";
+    const sourceHandleParent =
+      parentId === "root" ? sourceHandleRoot : sourceHandle;
 
     const newEdge: Edge = {
       id: `e_${parentId}_${id}`,
       source: parentId,
-      sourceHandle,
+      sourceHandle: sourceHandleParent,
       target: id,
-      targetHandle: "parent",
+      targetHandle: `parent-${id}`,
       type: "smoothstep",
       markerStart: {
         type: MarkerType.ArrowClosed,

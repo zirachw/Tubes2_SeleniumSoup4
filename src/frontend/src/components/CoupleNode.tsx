@@ -10,20 +10,19 @@ interface CoupleData {
   rightLabel: string;
   leftImageLink: string;
   rightImageLink: string;
+  id: string;
 }
 
-const BOX_WIDTH = 80;
-const BOX_HEIGHT = 40;
-const GAP = 12; // space between boxes (plus sign sits here)
-const PADDING = 8;
+export const BOX_WIDTH = 96;
+export const BOX_HEIGHT = 48;
+export const GAP = 12; // space between boxes (plus sign sits here)
+export const PADDING = 8;
 
 const containerStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   padding: PADDING,
-  // total width = 2*BOX_WIDTH + GAP + 2*PADDING
-  width: 2 * BOX_WIDTH + GAP + 2 * PADDING,
-  // height = BOX_HEIGHT + 2*PADDING
+  width: 2 * BOX_WIDTH + GAP + 5 * PADDING,
   height: BOX_HEIGHT + 2 * PADDING,
   position: "relative",
 };
@@ -31,6 +30,7 @@ const containerStyle: React.CSSProperties = {
 const boxStyle: React.CSSProperties = {
   width: BOX_WIDTH,
   height: BOX_HEIGHT,
+  padding: PADDING,
   border: "1px solid #777",
   borderRadius: 4,
   display: "flex",
@@ -42,23 +42,32 @@ const boxStyle: React.CSSProperties = {
   textOverflow: "ellipsis",
 };
 
+const labelStyle: React.CSSProperties = {
+  marginLeft: 6,
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  fontSize: 14,
+  color: "#333",
+};
+
 export default function CoupleNode({ data }: { data: CoupleData }) {
   return (
     <div style={containerStyle}>
       {/* single parent handle */}
       <Handle
         type="target"
-        id="parent"
+        id={`parent-${data.id}`}
         position={Position.Top}
         style={{
-          left: BOX_WIDTH + 2 * PADDING + GAP / 2,
+          left: BOX_WIDTH + 2.5 * PADDING + GAP / 2,
           top: -BOX_HEIGHT / 8,
         }}
       />
 
       {/* mom box + its child handle */}
       <div style={{ position: "relative", marginRight: GAP / 2 }}>
-        <div style={boxStyle}>
+        <div style={boxStyle} title={data.leftLabel}>
           <Image
             src={data.leftImageLink}
             alt={data.leftLabel}
@@ -66,22 +75,31 @@ export default function CoupleNode({ data }: { data: CoupleData }) {
             height={30}
             crossOrigin="anonymous"
           ></Image>
-          {data.leftLabel}
+          <span style={labelStyle}>{data.leftLabel}</span>
         </div>
         <Handle
           type="source"
-          id="left-child"
+          id={`left-child-${data.id}`}
           position={Position.Bottom}
           style={{ left: BOX_WIDTH / 2 }}
         />
       </div>
 
       {/* plus sign */}
-      <div style={{ userSelect: "none", fontSize: 16, margin: "0 4px" }}>+</div>
+      <div
+        style={{
+          userSelect: "none",
+          fontSize: 18,
+          margin: "0 6px",
+          color: "#555", // ← explicit color so it shows on white
+        }}
+      >
+        +
+      </div>
 
       {/* dad box + its child handle */}
       <div style={{ position: "relative", marginLeft: GAP / 2 }}>
-        <div style={boxStyle}>
+        <div style={boxStyle} title={data.rightLabel}>
           <Image
             src={data.rightImageLink}
             alt={data.rightLabel}
@@ -89,11 +107,11 @@ export default function CoupleNode({ data }: { data: CoupleData }) {
             height={30}
             crossOrigin="anonymous"
           ></Image>
-          {data.rightLabel}
+          <span style={labelStyle}>{data.rightLabel}</span>
         </div>
         <Handle
           type="source"
-          id="right-child"
+          id={`right-child-${data.id}`}
           position={Position.Bottom}
           style={{ left: BOX_WIDTH / 2 }}
         />
