@@ -1,4 +1,4 @@
-package dfs
+package search
 
 import (
 	"fmt"
@@ -8,50 +8,10 @@ import (
 	"github.com/zirachw/Tubes2_SeleniumSoup4/internal/scraper"
 )
 
-type Target struct {
-	Name        string
-	Tier        int
-	Recipes     []Recipe
-	UniquePaths int
-	ID          uint64
-}
-
-type Tree = *Target
-
-type Element struct {
-	Name    string   `json:"name"`
-	Tier    int      `json:"tier"`
-	Recipes []Recipe `json:"recipes,omitempty"`
-	ID      uint64   `json:"id"`
-}
-
-type Recipe struct {
-	Left  *Element `json:"left,omitempty"`
-	Right *Element `json:"right,omitempty"`
-}
-
-// Update events get streamed as we build.
-type Update struct {
-	Stage       string // e.g. "startDFS", "startRecipe", "startBuildLeft", ...
-	ElementName string
-	Tier        int    // actual tier of ElementName
-	RecipeIndex int    // which recipe of the *parent* we’re on
-	Info        string // any extra detail
-
-	ParentID uint64
-	LeftID   uint64
-	RightID  uint64
-
-	LeftLabel  string
-	RightLabel string
-}
-
-// countPaths is a memoized recursive DFS returning how many
-// full root→leaf chains an element can produce.
-func countPaths(
-	recipeData map[string]scraper.ElementData,
-	name string,
-) int {
+/**
+ *  A memoized recursive DFS returning how many full root → leaf chains an element can produce.
+ */
+func countPaths(recipeData map[string]scraper.ElementData, name string) int {
 	memo := map[string]int{}
 	var dfs func(string) int
 	dfs = func(el string) int {
@@ -79,9 +39,11 @@ func countPaths(
 	return dfs(name)
 }
 
-// DFSSearch builds up to maxUniquePaths full paths.
-// It only follows recipes whose ingredient tiers are strictly lower.
-func DFSSearch(
+/**
+ *  DFS builds up to maxUniquePaths full paths.
+ *  It only follows recipes whose ingredient tiers are strictly lower.
+ */
+func DFS(
 	recipeMap map[string]scraper.ElementData,
 	rootName string,
 	maxUniquePaths int,
@@ -167,7 +129,12 @@ func DFSSearch(
 	}
 }
 
-func DFSSearchParallel(
+/**
+ *  DFSParallel is a parallelized version of DFS.
+ *  It uses a worker pool to count paths and build subtrees.
+ *  Returns the built tree and the number of unique paths.
+ */
+func DFSParallel(
 	recipeData map[string]scraper.ElementData,
 	targetName string,
 	maxUniquePaths int,
@@ -338,9 +305,11 @@ func DFSSearchParallel(
 	}
 }
 
-// DFSSearchWithUpdates kicks off the DFS in a goroutine,
-// returning a channel you can range over for live updates.
-func DFSSearchWithUpdates(
+/**
+ *  DFSWithUpdates kicks off the DFS in a goroutine,
+ *  returns a channel you can range over for live updates.
+ */
+func DFSWithUpdates(
 	recipeData map[string]scraper.ElementData,
 	rootName string,
 	maxUniquePaths int,
@@ -349,7 +318,7 @@ func DFSSearchWithUpdates(
 ) <-chan Update {
 	updates := make(chan Update, 100)
 	go func() {
-		DFSSearchInternal(recipeData, rootName, maxUniquePaths, outPtr, updates, nextID, 0)
+		DFSInternal(recipeData, rootName, maxUniquePaths, outPtr, updates, nextID, 0)
 		if *outPtr != nil {
 			updates <- Update{
 				Stage:       "completeDFS",
@@ -364,9 +333,11 @@ func DFSSearchWithUpdates(
 	return updates
 }
 
-// DFSSearchInternal is the same worker-pool DFS as before,
-// but peppered with updateCh<-Update calls at key moments.
-func DFSSearchInternal(
+/**
+ *  DFSInternal is the same worker-pool DFS as before,
+ *  But peppered with updateCh<-Update calls at key moments.
+ */
+func DFSInternal(
 	recipeData map[string]scraper.ElementData,
 	targetName string,
 	maxUniquePaths int,
@@ -569,9 +540,11 @@ func DFSSearchInternal(
 	}
 }
 
-// buildSubtree invokes DFSSearch on a sub‐element to
-// get exactly up to maxPaths, then returns the *Element
-// tree plus how many it actually yielded.
+/**
+ *  BuildSubtree invokes DFSSearch on a sub‐element to
+ *  Get exactly up to maxPaths, then returns the *Element
+ *  Tree plus how many it actually yielded.
+ */
 func buildSubtree(
 	recipeMap map[string]scraper.ElementData,
 	name string,
@@ -579,7 +552,7 @@ func buildSubtree(
 	nextID func() uint64,
 ) (*Element, int) {
 	var tgt Tree
-	DFSSearch(recipeMap, name, maxPaths, &tgt, nextID)
+	DFS(recipeMap, name, maxPaths, &tgt, nextID)
 	if tgt == nil {
 		return nil, 0
 	}
@@ -590,8 +563,10 @@ func buildSubtree(
 	return e, tgt.UniquePaths
 }
 
-// buildSubtreeInternal invokes DFSSearchInternal on one element up to maxPaths,
-// streaming its own nested events, and returns the built *Element + how many paths.
+/**
+ *  BuildSubtreeInternal invokes DFSSearchInternal on one element up to maxPaths,
+ *  Streaming its own nested events, and returns the built *Element + how many paths.
+ */
 func buildSubtreeInternal(
 	recipeData map[string]scraper.ElementData,
 	elementName string,
@@ -601,7 +576,7 @@ func buildSubtreeInternal(
 	forcedID uint64,
 ) (*Element, int) {
 	var subtree Tree
-	DFSSearchInternal(recipeData, elementName, maxPaths, &subtree, updateCh, nextID, forcedID)
+	DFSInternal(recipeData, elementName, maxPaths, &subtree, updateCh, nextID, forcedID)
 	e := &Element{Name: subtree.Name, Tier: subtree.Tier, Recipes: subtree.Recipes, ID: subtree.ID}
 	return e, subtree.UniquePaths
 }
