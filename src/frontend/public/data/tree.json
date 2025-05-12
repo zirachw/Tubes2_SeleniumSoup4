@@ -1,0 +1,202 @@
+{
+  "value": "Bridge",
+  "children": [
+    {
+      "left": {
+        "value": "Metal",
+        "children": [
+          {
+            "left": {
+              "value": "Stone",
+              "children": [
+                {
+                  "left": {
+                    "value": "Earth",
+                    "nSolution": 1
+                  },
+                  "right": {
+                    "value": "Pressure",
+                    "children": [
+                      {
+                        "left": {
+                          "value": "Air",
+                          "nSolution": 1
+                        },
+                        "right": {
+                          "value": "Air",
+                          "nSolution": 1
+                        }
+                      }
+                    ],
+                    "nSolution": 1
+                  }
+                },
+                {
+                  "left": {
+                    "value": "Air",
+                    "nSolution": 1
+                  },
+                  "right": {
+                    "value": "Lava",
+                    "children": [
+                      {
+                        "left": {
+                          "value": "Earth",
+                          "nSolution": 1
+                        },
+                        "right": {
+                          "value": "Fire",
+                          "nSolution": 1
+                        }
+                      }
+                    ],
+                    "nSolution": 1
+                  }
+                }
+              ],
+              "nSolution": 2
+            },
+            "right": {
+              "value": "Fire",
+              "nSolution": 1
+            }
+          },
+          {
+            "left": {
+              "value": "Stone",
+              "children": [
+                {
+                  "left": {
+                    "value": "Earth",
+                    "nSolution": 1
+                  },
+                  "right": {
+                    "value": "Pressure",
+                    "children": [
+                      {
+                        "left": {
+                          "value": "Air",
+                          "nSolution": 1
+                        },
+                        "right": {
+                          "value": "Air",
+                          "nSolution": 1
+                        }
+                      }
+                    ],
+                    "nSolution": 1
+                  }
+                },
+                {
+                  "left": {
+                    "value": "Air",
+                    "nSolution": 1
+                  },
+                  "right": {
+                    "value": "Lava",
+                    "children": [
+                      {
+                        "left": {
+                          "value": "Earth",
+                          "nSolution": 1
+                        },
+                        "right": {
+                          "value": "Fire",
+                          "nSolution": 1
+                        }
+                      }
+                    ],
+                    "nSolution": 1
+                  }
+                }
+              ],
+              "nSolution": 2
+            },
+            "right": {
+              "value": "Heat",
+              "children": [
+                {
+                  "left": {
+                    "value": "Air",
+                    "nSolution": 1
+                  },
+                  "right": {
+                    "value": "Energy",
+                    "children": [
+                      {
+                        "left": {
+                          "value": "Fire",
+                          "nSolution": 1
+                        },
+                        "right": {
+                          "value": "Fire",
+                          "nSolution": 1
+                        }
+                      }
+                    ],
+                    "nSolution": 1
+                  }
+                }
+              ],
+              "nSolution": 1
+            }
+          }
+        ],
+        "nSolution": 3
+      },
+      "right": {
+        "value": "River",
+        "children": [
+          {
+            "left": {
+              "value": "Water",
+              "nSolution": 1
+            },
+            "right": {
+              "value": "Mountain",
+              "children": [
+                {
+                  "left": {
+                    "value": "Earth",
+                    "nSolution": 1
+                  },
+                  "right": {
+                    "value": "Earthquake",
+                    "children": [
+                      {
+                        "left": {
+                          "value": "Earth",
+                          "nSolution": 1
+                        },
+                        "right": {
+                          "value": "Energy",
+                          "children": [
+                            {
+                              "left": {
+                                "value": "Fire",
+                                "nSolution": 1
+                              },
+                              "right": {
+                                "value": "Fire",
+                                "nSolution": 1
+                              }
+                            }
+                          ],
+                          "nSolution": 1
+                        }
+                      }
+                    ],
+                    "nSolution": 1
+                  }
+                }
+              ],
+              "nSolution": 1
+            }
+          }
+        ],
+        "nSolution": 1
+      }
+    }
+  ],
+  "nSolution": 3
+}

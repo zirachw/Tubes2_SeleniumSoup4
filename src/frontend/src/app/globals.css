@@ -24,3 +24,9 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: 20;
+  }
+}

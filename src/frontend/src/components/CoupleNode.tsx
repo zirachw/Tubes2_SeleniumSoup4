@@ -1,10 +1,9 @@
 "use client";
-
 // components/CoupleNode.tsx
 import React from "react";
 import { Handle, Position } from "reactflow";
 import Image from "next/image";
-
+import { getElementBackgroundColor } from "@/utils/getElementBackgroundColor";
 interface CoupleData {
   leftLabel: string;
   rightLabel: string;
@@ -12,7 +11,6 @@ interface CoupleData {
   rightImageLink: string;
   id: string;
 }
-
 export const BOX_WIDTH = 96;
 export const BOX_HEIGHT = 48;
 export const GAP = 12; // space between boxes (plus sign sits here)
@@ -27,7 +25,7 @@ const containerStyle: React.CSSProperties = {
   position: "relative",
 };
 
-const boxStyle: React.CSSProperties = {
+const getBoxStyle = (label: string): React.CSSProperties => ({
   width: BOX_WIDTH,
   height: BOX_HEIGHT,
   padding: PADDING,
@@ -37,10 +35,10 @@ const boxStyle: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "left",
   color: "#FFA500",
-  background: "#fff",
+  background: getElementBackgroundColor(label),
   overflow: "hidden",
   textOverflow: "ellipsis",
-};
+});
 
 const labelStyle: React.CSSProperties = {
   marginLeft: 6,
@@ -49,6 +47,12 @@ const labelStyle: React.CSSProperties = {
   textOverflow: "ellipsis",
   fontSize: 14,
   color: "#333",
+};
+
+const imageStyle: React.CSSProperties = {
+  width: 30,
+  height: 30,
+  filter: "drop-shadow(0px 0px 4px rgba(0, 0, 0, 0.3))",
 };
 
 export default function CoupleNode({ data }: { data: CoupleData }) {
@@ -67,13 +71,14 @@ export default function CoupleNode({ data }: { data: CoupleData }) {
 
       {/* mom box + its child handle */}
       <div style={{ position: "relative", marginRight: GAP / 2 }}>
-        <div style={boxStyle} title={data.leftLabel}>
+        <div style={getBoxStyle(data.leftLabel)} title={data.leftLabel}>
           <Image
             src={data.leftImageLink}
             alt={data.leftLabel}
             width={30}
             height={30}
             crossOrigin="anonymous"
+            style={imageStyle}
           ></Image>
           <span style={labelStyle}>{data.leftLabel}</span>
         </div>
@@ -99,13 +104,14 @@ export default function CoupleNode({ data }: { data: CoupleData }) {
 
       {/* dad box + its child handle */}
       <div style={{ position: "relative", marginLeft: GAP / 2 }}>
-        <div style={boxStyle} title={data.rightLabel}>
+        <div style={getBoxStyle(data.rightLabel)} title={data.rightLabel}>
           <Image
             src={data.rightImageLink}
             alt={data.rightLabel}
             width={30}
             height={30}
             crossOrigin="anonymous"
+            style={imageStyle}
           ></Image>
           <span style={labelStyle}>{data.rightLabel}</span>
         </div>

@@ -1,0 +1,85 @@
+"use client";
+import React, { useState, useEffect } from "react";
+import { Sidebar, TreeDataViewer } from "@/components";
+import { ElementsData } from "@/types";
+
+const Page: React.FC = () => {
+  // State for sidebar
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // State for elements data
+  const [elementsData, setElementsData] = useState<ElementsData>({});
+  const [treeData, setTreeData] = useState<any>(null); // Placeholder for tree data
+  const [loading, setLoading] = useState(true);
+
+  // Fetch elements data on component mount
+  useEffect(() => {
+    const fetchData = async () => {
+       const treeResp = await fetch("/data/tree.json");
+        if (!treeResp.ok) throw new Error("Failed to load tree.json");
+        const treeJson = await treeResp.json();
+        setTreeData(treeJson);
+
+      const localData = localStorage.getItem("elements_data");
+      if (localData) {
+        try {
+          const parsed = JSON.parse(localData) as ElementsData;
+          setElementsData(parsed);
+          setLoading(false);
+          console.log("Data loaded from localStorage:", parsed);
+          return;
+        } catch (err) {
+          console.error("Invalid JSON in localStorage:", err);
+          localStorage.removeItem("elements_data");
+        }
+      }
+
+      try {
+        const response = await fetch("http://localhost:8080/api/data"); // replace with actual API later
+        const result = await response.json();
+        localStorage.setItem("elements_data", JSON.stringify(result));
+        setElementsData(result);
+      } catch (err) {
+        console.error("Failed to fetch data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Toggle sidebar visibility
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  return (
+    <div className="flex min-h-screen bg-white">
+      {/* Main content */}
+      <TreeDataViewer elementsData={elementsData} treeData={treeData} loading={loading} />
+
+      {/* Sidebar Toggle Button - visible when sidebar is closed */}
+      {!sidebarOpen && (
+        <button
+          onClick={toggleSidebar}
+          className="fixed top-4 left-4 z-20 bg-gray-700 p-2 rounded"
+        >
+          <svg viewBox="0 0 24 24" fill="white" className="w-6 h-6">
+            <path d="M4 6h16M4 12h16M4 18h16" stroke="white" strokeWidth="2" />
+          </svg>
+        </button>
+      )}
+
+      {/* Sidebar Component */}
+      <Sidebar
+        isOpen={sidebarOpen}
+        onToggle={toggleSidebar}
+        elementsData={elementsData}
+        loading={loading}
+      />
+    </div>
+  );
+};
+
+export default Page;
