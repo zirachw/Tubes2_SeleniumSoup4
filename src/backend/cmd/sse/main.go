@@ -63,7 +63,7 @@ func sseHandler(recipeMap map[string]scraper.ElementData) http.Handler {
 
 			go func() {
 				defer close(updates)
-				search.DFSInternal( // or DFSSearchWithUpdates
+				search.DFS( // or DFSSearchWithUpdates
 					recipeMap,
 					query.Get("element"),
 					count,
@@ -78,7 +78,7 @@ func sseHandler(recipeMap map[string]scraper.ElementData) http.Handler {
 			var err error
 			var paths []*search.Element
 
-			paths, err = search.BFSParallel(recipeMap, query.Get("element"), count)
+			paths, err = search.BFS(recipeMap, query.Get("element"), count)
 			if err != nil {
 				log.Fatalf("BFS search error: %v", err)
 				return
