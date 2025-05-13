@@ -10,11 +10,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/zirachw/Tubes2_SeleniumSoup4/internal/dfs"
 	"github.com/zirachw/Tubes2_SeleniumSoup4/internal/scraper"
+	"github.com/zirachw/Tubes2_SeleniumSoup4/internal/search"
 )
 
-func sseDFSHandler(recipeMap map[string]scraper.ElementData) http.Handler {
+func sseHandler(recipeMap map[string]scraper.ElementData) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -32,13 +32,13 @@ func sseDFSHandler(recipeMap map[string]scraper.ElementData) http.Handler {
 		ctx := r.Context()
 		if ctx.Err() != nil {
 			// client disconnected before we started
-			log.Println("client disconnected before DFS started")
+			log.Println("client disconnected before search started")
 			return
 		}
-		fmt.Printf("client connected, starting DFS for %s\n", r.URL.Query().Get("element"))
+		fmt.Printf("client connected, starting search for %s\n", r.URL.Query().Get("element"))
 
-		updates := make(chan dfs.Update)
-		var tree dfs.Tree
+		updates := make(chan search.Update)
+		var tree search.Tree
 		var counter uint64
 		nextID := func() uint64 { return atomic.AddUint64(&counter, 1) }
 
@@ -59,24 +59,42 @@ func sseDFSHandler(recipeMap map[string]scraper.ElementData) http.Handler {
 			}
 		}
 
-		go func() {
-			defer close(updates)
-			dfs.DFSSearchInternal( // or DFSSearchWithUpdates
-				recipeMap,
-				query.Get("element"),
-				count,
-				&tree,
-				updates,
-				nextID,
-				0,
-			)
-		}()
+		if query.Get("algorithm") == "DFS" {
+
+			go func() {
+				defer close(updates)
+				search.DFSInternal( // or DFSSearchWithUpdates
+					recipeMap,
+					query.Get("element"),
+					count,
+					&tree,
+					updates,
+					nextID,
+					0,
+				)
+			}()
+		} else if query.Get("algorithm") == "BFS" {
+
+			var err error
+			var paths []*search.Element
+
+			paths, err = search.BFSParallel(recipeMap, query.Get("element"), count)
+			if err != nil {
+				log.Fatalf("BFS search error: %v", err)
+				return
+			}
+
+			go func() {
+				tree = search.CreateFullTree(paths, updates, nextID)
+				close(updates)
+			}()
+		}
 
 		// 5) Batch events
 		const maxBatch = 20
 		const maxDelay = 100 * time.Millisecond
 
-		buffer := make([]dfs.Update, 0, maxBatch)
+		buffer := make([]search.Update, 0, maxBatch)
 		timer := time.NewTimer(maxDelay)
 		defer timer.Stop()
 
@@ -101,17 +119,21 @@ func sseDFSHandler(recipeMap map[string]scraper.ElementData) http.Handler {
 			select {
 			case <-ctx.Done():
 				// client disconnected — stop processing
-				log.Println("client went away, cancelling DFS")
+				log.Println("client went away, cancelling search")
 				return
 
 			case upd, ok := <-updates:
 				if !ok {
-					// DFS finished, send any remaining then close
 					sendBatch()
-					fmt.Printf("DFS finished, sending final update\n")
+					fmt.Printf("search finished, sending final update\n")
 					return
 				}
 				buffer = append(buffer, upd)
+				// print update to stdout
+				fmt.Printf(
+					"  → Stage=%-15s Elem=%-10s Tier=%2d Recipe#=%2d Info=%s\n parentID=%d\n, leftID=%d\n, rightID=%d\n",
+					upd.Stage, upd.ElementName, upd.Tier, upd.RecipeIndex, upd.Info, upd.ParentID, upd.LeftID, upd.RightID,
+				)
 				if len(buffer) >= maxBatch {
 					if err := sendBatch(); err != nil {
 						log.Println("sse write error:", err)
@@ -144,7 +166,7 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("/stream", sseDFSHandler(recipeMap))
+	mux.Handle("/stream", sseHandler(recipeMap))
 	log.Println("listening on :8080")
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }

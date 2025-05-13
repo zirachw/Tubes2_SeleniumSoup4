@@ -353,7 +353,7 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
       const start = performance.now();
       if (queueRef.current.length) {
         let next = queueRef.current.shift()!;
-        if (next.Stage === "startDFS" && !hasRoot.current) {
+        if ((next.Stage === "startDFS" || next.Stage === "startBFS") && !hasRoot.current) {
           hasRoot.current = true;
           const newNodes = [
             {

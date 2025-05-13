@@ -202,97 +202,105 @@ func BFSParallel(recipeMap map[string]scraper.ElementData, targetName string, ma
  *  It emits Update events when ‘updates’ is non-nil.
  */
 func CreateFullTree(paths []*Element, updates chan<- Update, nextID func() uint64) *Target {
-    // 1) Build root Target as before
-    rootID := nextID()
-    tgt := &Target{Name: "", Tier: 0, Recipes: nil, UniquePaths: len(paths), ID: rootID}
-    if len(paths) == 0 {
-        return tgt
-    }
-    tgt.Name = paths[0].Name
-    tgt.Tier = paths[0].Tier
-    if updates != nil {
-        updates <- Update{Stage:"createTarget", ElementName:tgt.Name, Tier:tgt.Tier, Info:fmt.Sprintf("target id=%d",rootID)}
-    }
+	// 1) Build root Target as before
+	rootID := nextID()
+	tgt := &Target{Name: "", Tier: 0, Recipes: nil, UniquePaths: len(paths), ID: rootID}
+	if len(paths) == 0 {
+		return tgt
+	}
+	tgt.Name = paths[0].Name
+	tgt.Tier = paths[0].Tier
+	if updates != nil {
+		updates <- Update{Stage: "startBFS", ElementName: tgt.Name, Tier: tgt.Tier, Info: fmt.Sprintf("target id=%d", rootID)}
+	}
 
-    // 2) Clone memo to share identical subtrees
-    cloneMemo := make(map[*Element]*Element)
-    var clone func(src *Element) *Element
-    clone = func(src *Element) *Element {
-        if c, ok := cloneMemo[src]; ok {
-            return c
-        }
-        id := nextID()
-        node := &Element{Name: src.Name, Tier: src.Tier, ID: id}
-        cloneMemo[src] = node
-        if updates != nil {
-            updates <- Update{Stage:"createNode", ElementName:node.Name, Tier:node.Tier, Info:fmt.Sprintf("node id=%d",id)}
-        }
-        for idx, r := range src.Recipes {
-            L := clone(r.Left)
-            R := clone(r.Right)
-            if updates != nil {
-                updates <- Update{
-                    Stage:       "createRecipe",
-                    ElementName: node.Name,
-                    Tier:        node.Tier,
-                    RecipeIndex: idx,
-                    ParentID:    node.ID,
-                    LeftID:      L.ID,
-                    RightID:     R.ID,
-                    Info:        fmt.Sprintf("recipe %d for node %d", idx, node.ID),
-                }
-            }
-            node.Recipes = append(node.Recipes, Recipe{Left: L, Right: R})
-        }
-        return node
-    }
+	// 2) Clone memo to share identical subtrees
+	cloneMemo := make(map[*Element]*Element)
+	var clone func(src *Element) *Element
+	clone = func(src *Element) *Element {
+		if c, ok := cloneMemo[src]; ok {
+			return c
+		}
+		id := nextID()
+		node := &Element{Name: src.Name, Tier: src.Tier, ID: id}
+		cloneMemo[src] = node
+		if updates != nil {
+			updates <- Update{Stage: "createNode", ElementName: node.Name, Tier: node.Tier, Info: fmt.Sprintf("node id=%d", id)}
+		}
+		for idx, r := range src.Recipes {
+			L := clone(r.Left)
+			R := clone(r.Right)
+			if updates != nil {
+				updates <- Update{
+					Stage:       "startRecipe",
+					ElementName: node.Name,
+					Tier:        node.Tier,
+					RecipeIndex: idx,
+					ParentID:    node.ID,
+					LeftID:      L.ID,
+					RightID:     R.ID,
+					Info:        fmt.Sprintf("recipe %d for node %d", idx, node.ID),
+					LeftLabel:   L.Name,
+					RightLabel:  R.Name,
+				}
+			}
+			node.Recipes = append(node.Recipes, Recipe{Left: L, Right: R})
+		}
+		return node
+	}
 
-    // 3) Attach top‐level recipes **merging by parent signature**
-    seen := make(map[string]int) // signature -> index in tgt.Recipes
-    for pidx, rootSrc := range paths {
-        clonedRoot := clone(rootSrc)
-        for _, rec := range clonedRoot.Recipes {
-            sig := rec.Left.Name + "|" + rec.Right.Name
-            idx, exists := seen[sig]
-            if !exists {
-                // first time we see this parent combo: attach whole Recipe
-                tgt.Recipes = append(tgt.Recipes, rec)
-                idx = len(tgt.Recipes) - 1
-                seen[sig] = idx
-                if updates != nil {
-                    updates <- Update{
-                        Stage:       "attachTopRecipe",
-                        ElementName: tgt.Name,
-                        Tier:        tgt.Tier,
-                        RecipeIndex: idx,
-                        ParentID:    tgt.ID,
-                        LeftID:      rec.Left.ID,
-                        RightID:     rec.Right.ID,
-                        Info:        fmt.Sprintf("path %d first attach of %s", pidx, sig),
-                    }
-                }
-            } else {
-                // merge this child recipe into the existing right.Recipes
-                existing := &tgt.Recipes[idx]
-                // append all recipes under rec.Right into existing.Right.Recipes
-                for _, sub := range rec.Right.Recipes {
-                    existing.Right.Recipes = append(existing.Right.Recipes, sub)
-                    if updates != nil {
-                        updates <- Update{
-                            Stage:       "mergeRecipe",
-                            ElementName: tgt.Name,
-                            Tier:        tgt.Tier,
-                            RecipeIndex: idx,
-                            ParentID:    tgt.ID,
-                            LeftID:      rec.Left.ID,
-                            RightID:     rec.Right.ID,
-                            Info:        fmt.Sprintf("path %d merge into %s", pidx, sig),
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    return tgt
+	// 3) Attach top‐level recipes **merging by parent signature**
+	seen := make(map[string]int) // signature -> index in tgt.Recipes
+	for pidx, rootSrc := range paths {
+		clonedRoot := clone(rootSrc)
+		for _, rec := range clonedRoot.Recipes {
+			sig := rec.Left.Name + "|" + rec.Right.Name
+			idx, exists := seen[sig]
+			if !exists {
+				// first time we see this parent combo: attach whole Recipe
+				tgt.Recipes = append(tgt.Recipes, rec)
+				idx = len(tgt.Recipes) - 1
+				seen[sig] = idx
+				if updates != nil {
+					updates <- Update{
+						Stage:       "attachTopRecipe",
+						ElementName: tgt.Name,
+						Tier:        tgt.Tier,
+						RecipeIndex: idx,
+						ParentID:    tgt.ID,
+						LeftID:      rec.Left.ID,
+						RightID:     rec.Right.ID,
+						Info:        fmt.Sprintf("path %d first attach of %s", pidx, sig),
+					}
+				}
+			} else {
+				// merge this child recipe into the existing right.Recipes
+				existing := &tgt.Recipes[idx]
+				// append all recipes under rec.Right into existing.Right.Recipes
+				for _, sub := range rec.Right.Recipes {
+					existing.Right.Recipes = append(existing.Right.Recipes, sub)
+					if updates != nil {
+						updates <- Update{
+							Stage:       "mergeRecipe",
+							ElementName: tgt.Name,
+							Tier:        tgt.Tier,
+							RecipeIndex: idx,
+							ParentID:    tgt.ID,
+							LeftID:      rec.Left.ID,
+							RightID:     rec.Right.ID,
+							Info:        fmt.Sprintf("path %d merge into %s", pidx, sig),
+						}
+					}
+				}
+			}
+		}
+	}
+	if updates != nil {
+		updates <- Update{
+			Stage:       "doneRecipe",
+			ElementName: tgt.Name,
+			Tier:        tgt.Tier,
+		}
+	}
+	return tgt
 }
