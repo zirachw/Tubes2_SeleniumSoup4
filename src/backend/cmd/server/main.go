@@ -9,7 +9,7 @@ import (
 
 	// "encoding/json"
 	"github.com/zirachw/Tubes2_SeleniumSoup4/internal/scraper"
-	"github.com/zirachw/Tubes2_SeleniumSoup4/internal/search"
+	// "github.com/zirachw/Tubes2_SeleniumSoup4/internal/dfs"
 )
 
 func makeRecipeHandler(data map[string]scraper.ElementData) func(w http.ResponseWriter, r *http.Request) {
@@ -49,20 +49,20 @@ func makeRecipeHandler(data map[string]scraper.ElementData) func(w http.Response
 		// case "bfs":
 		//    recipes = BFS(graph, elem, limit)
 		case "dfs":
-			var memo = &map[string]search.Tree{}
-			var root = &search.Root{
-				Value:     elem,
-				Children:  nil,
-				Up:        nil,
-				NSolution: 0,
-				NVisited:  0}
-			var tree search.Tree = root
-			search.DFSSearch(data, elem, limit, *memo, &tree)
-			var res, err = search.TreeToJSON(tree)
-			if err == nil {
-				w.Header().Set("Content-Type", "application/json")
-				w.Write(res)
-			}
+			// var memo = &map[string]dfs.Tree{}
+			// var root = &dfs.Root{
+			// 	Value:     elem,
+			// 	Children:  nil,
+			// 	Up:        nil,
+			// 	NSolution: 0,
+			// 	NVisited:  0}
+			// var tree dfs.Tree = root
+			// dfs.DFSSearch(data, elem, limit, *memo, &tree)
+			// var res, err = dfs.TreeToJSON(tree)
+			// if err == nil {
+			// 	w.Header().Set("Content-Type", "application/json")
+			// 	w.Write(res)
+			// }
 		default:
 			http.Error(w, "algorithm must be bfs or dfs", http.StatusBadRequest)
 			return

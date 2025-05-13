@@ -12,16 +12,20 @@ import (
     "github.com/PuerkitoBio/goquery"
 )
 
-// ElementData holds recipes, image link, and tier for an element.
+/**
+ *  ElementData holds recipes, image link, and tier for an element.
+ */ 
 type ElementData struct {
     Tier      int        `json:"tier"`
     ImageLink string     `json:"imageLink"`
     Recipes   [][2]string `json:"recipes"`
 }
 
-// Run executes the scraper for Little Alchemy 2 with optional M&M update.
-// If updateMAM is true, it rescans and caches the Myths & Monsters dataset;
-// otherwise it loads from the existing cache. Returns the LA2 element map.
+/**
+ *  Run executes the scraper for Little Alchemy 2 with optional M&M update.
+ *  If updateMAM is true, it rescans and caches the Myths & Monsters dataset;
+ *  otherwise it loads from the existing cache. Returns the LA2 element map.
+ */
 func Run(updateMAM bool) map[string]ElementData {
     const mamCache = "data/myths_and_monsters.json"
     var mamMap map[string]ElementData
@@ -83,7 +87,9 @@ func Run(updateMAM bool) map[string]ElementData {
     return laMap
 }
 
-// scrapePage fetches and parses a page using the given table selector.
+/**
+ *  scrapePage fetches the HTML from the given URL and extracts elements
+ */
 func scrapePage(url, tableSel string) map[string]ElementData {
     resp, err := http.Get(url)
     if err != nil {
@@ -153,7 +159,9 @@ func scrapePage(url, tableSel string) map[string]ElementData {
     return result
 }
 
-// writeJSON writes the provided data map to the given filepath in pretty JSON.
+/** 
+ *  writeJSON writes the provided data map to the given filepath in pretty JSON.
+ */ 
 func writeJSON(path string, data map[string]ElementData) error {
     file, err := os.Create(path)
     if err != nil {

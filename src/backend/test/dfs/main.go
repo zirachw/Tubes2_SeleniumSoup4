@@ -8,8 +8,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/zirachw/Tubes2_SeleniumSoup4/internal/dfs"
 	"github.com/zirachw/Tubes2_SeleniumSoup4/internal/scraper"
+	"github.com/zirachw/Tubes2_SeleniumSoup4/internal/search"
 )
 
 var (
@@ -25,27 +25,28 @@ var (
 
 var nodeCount int
 
-func printRecipeTree(el *dfs.Element, indent string) int {
-	if el == nil {
-		return 0
-	}
-	fmt.Printf("%s%s (Tier: %d)\n", indent, el.Name, el.Tier)
-	nodeCount++
+func printRecipeTree(el *search.Element, indent string) int {
+    if el == nil {
+        return 0
+    }
+    fmt.Printf("%s%s (tier=%d, id=%d)\n", indent, el.Name, el.Tier, el.ID)
+    nodeCount++
 
-	if len(el.Recipes) == 0 {
-		return 1
-	}
-	total := 0
-	for i, r := range el.Recipes {
-		fmt.Printf("%s  Recipe %d:\n", indent, i+1)
-		lp := printRecipeTree(r.Left, indent+"    Left: ")
-		rp := printRecipeTree(r.Right, indent+"    Right: ")
-		paths := lp * rp
-		total += paths
-		fmt.Printf("%s  Recipe %d contributes %d path(s)\n",
-			indent, i+1, paths)
-	}
-	return total
+    if len(el.Recipes) == 0 {
+        return 1
+    }
+    total := 0
+    for i, r := range el.Recipes {
+        fmt.Printf("%s  Recipe %d:\n", indent, i+1)
+        fmt.Printf("%s    Left ingredient:\n", indent)
+        lp := printRecipeTree(r.Left, indent+"      ")
+        fmt.Printf("%s    Right ingredient:\n", indent)
+        rp := printRecipeTree(r.Right, indent+"      ")
+        contrib := lp * rp
+        total += contrib
+        fmt.Printf("%s  Recipe %d contributes %d path(s)\n", indent, i+1, contrib)
+    }
+    return total
 }
 
 type ResultData struct {
@@ -72,13 +73,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	var tree dfs.Tree
+	var tree search.Tree
 
 	var counter uint64
 	nextID := func() uint64 { return atomic.AddUint64(&counter, 1) }
 
 	if *flagUpdates {
-		updates := dfs.DFSSearchWithUpdates(
+		updates := search.DFSWithUpdates(
 			recipeMap,
 			*flagElement,
 			*flagPaths,
@@ -95,9 +96,9 @@ func main() {
 
 	} else {
 		if *flagPaths <= 1 {
-			dfs.DFSSearch(recipeMap, *flagElement, *flagPaths, &tree, nextID)
+			search.DFS(recipeMap, *flagElement, *flagPaths, &tree, nextID)
 		} else {
-			dfs.DFSSearchParallel(recipeMap, *flagElement, *flagPaths, &tree, nextID)
+			search.DFSParallel(recipeMap, *flagElement, *flagPaths, &tree, nextID)
 		}
 	}
 
@@ -110,12 +111,12 @@ func main() {
 
 	nodeCount = 0
 	fmt.Println("\n📖 Final DFS Recipe Tree:")
-	printRecipeTree(&dfs.Element{
+	printRecipeTree(&search.Element{
 		Name:    tree.Name,
 		Tier:    tree.Tier,
 		Recipes: tree.Recipes,
 	}, "")
-	fmt.Printf("\nTotal nodes explored: %d\n", nodeCount)
+	fmt.Printf("\nTotal nodes explored: %d\n", counter)
 	fmt.Printf("Unique paths found: %d\n", tree.UniquePaths)
 	fmt.Printf("Time taken: %v\n", elapsed)
 
@@ -125,7 +126,7 @@ func main() {
 			UniquePaths:   tree.UniquePaths,
 			TimeTaken:     elapsed.String(),
 			NodesExplored: nodeCount,
-			RecipeTree: &dfs.Element{
+			RecipeTree: &search.Element{
 				Name:    tree.Name,
 				Tier:    tree.Tier,
 				Recipes: tree.Recipes,
