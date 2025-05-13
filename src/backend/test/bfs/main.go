@@ -48,18 +48,13 @@ func main() {
 	var counter uint64
 	nextID := func() uint64 { return atomic.AddUint64(&counter, 1) }
 
-    // 1) Run BFS or BFSParallel
     var paths []*search.Element
-    if *flagPaths <= 1 {
-        paths, err = search.BFS(recipeMap, *flagElement, *flagPaths)
-    } else {
-        paths, err = search.BFSParallel(recipeMap, *flagElement, *flagPaths)
-    }
+    paths, err = search.BFS(recipeMap, *flagElement, *flagPaths)
+
     if err != nil {
         log.Fatalf("BFS search error: %v", err)
     }
 
-    // 2) Build full tree, streaming updates if requested
     var tree *search.Target
     if *flagUpdates {
         updates := make(chan search.Update, 100)
@@ -80,16 +75,12 @@ func main() {
 
     elapsed := time.Since(start)
 
-    // 3) If we still didn't find anything, warn
     if tree == nil || tree.UniquePaths == 0 {
         fmt.Fprintf(os.Stderr, "Element %q not found or no paths\n", *flagElement)
-        // But we continue to output JSON below
     }
 
-    // Get the number of nodes explored from the BFS function
     nodesExplored := search.GetBFSNodeExplored()
 
-    // Create an Element from the Target for printing and counting
     rootEl := &search.Element{
         Name:    tree.Name,
         Tier:    tree.Tier,
@@ -97,11 +88,9 @@ func main() {
         ID:      tree.ID,
     }
 
-    // 4) Print tree structure
     fmt.Println("\n📖 Final BFS Recipe Tree:")
     search.PrintRecipeTree(rootEl, "")
 
-    // Count nodes in the tree
     nodesInTree := search.CountTreeNodes(rootEl)
 
     fmt.Printf("\nNodes explored during BFS: %d\n", nodesExplored)
@@ -109,7 +98,6 @@ func main() {
     fmt.Printf("Unique paths found: %d\n", tree.UniquePaths)
     fmt.Printf("Time taken: %v\n", elapsed)
 
-    // 5) Emit JSON
     out := ResultData{
         Element:       *flagElement,
         UniquePaths:   tree.UniquePaths,

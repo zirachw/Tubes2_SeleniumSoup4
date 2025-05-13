@@ -20,101 +20,11 @@ func ResetBFSNodeExplored() {
 }
 
 /**
- *  BFS runs a bottom-up DP: it builds up to maxPaths example subtrees for
- *  Every element in ascending tier order, then returns the ones for targetName.
- */
-func BFS(recipeMap map[string]scraper.ElementData, targetName string, maxPaths int) ([]*Element, error) {
-	ResetBFSNodeExplored()
-
-	// 1) Group elements by tier
-	byTier := make(map[int][]string, len(recipeMap))
-	var tiers []int
-	for name, data := range recipeMap {
-		t := data.Tier
-		if _, ok := byTier[t]; !ok {
-			tiers = append(tiers, t)
-		}
-		byTier[t] = append(byTier[t], name)
-	}
-	sort.Ints(tiers)
-
-	// 2) memo[name] = up to maxPaths built subtrees for that element
-	memo := make(map[string][]*Element, len(recipeMap))
-
-	// 3) Initialize base elements (tier 0)
-	for _, name := range byTier[0] {
-		memo[name] = []*Element{{Name: name, Tier: 0}}
-		atomic.AddUint64(&bfsNodeExplored, 1)
-	}
-
-	// 4) DP upwards through tiers
-	for _, tier := range tiers {
-		if tier == 0 {
-			continue
-		}
-		for _, name := range byTier[tier] {
-			atomic.AddUint64(&bfsNodeExplored, 1)
-			data := recipeMap[name]
-			var examples []*Element
-
-			// Try each recipe that makes `name`
-			for _, pair := range data.Recipes {
-				leftList, lok := memo[pair[0]]
-				rightList, rok := memo[pair[1]]
-
-				if !lok || !rok || len(leftList) == 0 || len(rightList) == 0 {
-					continue
-				}
-
-				for _, L := range leftList {
-					for _, R := range rightList {
-						if len(examples) >= maxPaths {
-							break
-						}
-
-						if data.Tier <= L.Tier || data.Tier <= R.Tier {
-							continue
-						}
-						atomic.AddUint64(&bfsNodeExplored, 1)
-						examples = append(examples, &Element{
-							Name: name,
-							Tier: data.Tier,
-							Recipes: []Recipe{{
-								Left:  L,
-								Right: R,
-							}},
-						})
-					}
-					if len(examples) >= maxPaths {
-						break
-					}
-				}
-				if len(examples) >= maxPaths {
-					break
-				}
-			}
-
-			memo[name] = examples
-		}
-	}
-
-	// 5) Return up to maxPaths for the target
-	result, ok := memo[targetName]
-	if !ok {
-		return nil, nil
-	}
-	if len(result) > maxPaths {
-		result = result[:maxPaths]
-	}
-	return result, nil
-}
-
-/**
  *  BFSParallel runs a bottom-up DP with per-tier concurrency,
  *  building up to maxPaths example sub-trees per element,
  *  then returns up to maxPaths for targetName.
  */
-func BFSParallel(recipeMap map[string]scraper.ElementData, targetName string, maxPaths int) ([]*Element, error) {
+func BFS(recipeMap map[string]scraper.ElementData, targetName string, maxPaths int) ([]*Element, error) {
 	ResetBFSNodeExplored()
 
 	// 1) bucket names by tier
