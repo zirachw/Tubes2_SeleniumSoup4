@@ -154,7 +154,26 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="h-full w-64 overflow-hidden bg-[#404040] text-[#DBDBDB] flex flex-col font-[Georgia]">
           {/* Header with close button */}
           <div className="p-4 flex justify-between items-center">
-            <h2 className="text-xl font-[Georgia]">Nani ga Suki?</h2>
+            {/* Group image and heading together */}
+            <div className="flex items-center">
+              {/* Wrap the image in a link that opens YouTube in a new tab */}
+              <a
+                href={"https://www.youtube.com/watch?v=W-0lSiV-H7k&t=91s"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block"
+              >
+                <img
+                  src="/frieren.png"
+                  alt="Beatiful n Cute Frieren"
+                  className="w-6 h-6 mr-2"
+                  draggable="false"
+                  onDragStart={(e) => e.preventDefault()}
+                />
+              </a>
+              <h2 className="text-xl font-[Georgia]">Nani ga Suki?</h2>
+            </div>
+
             <button
               onClick={onToggle}
               className="text-[#DBDBDB] hover:text-white"

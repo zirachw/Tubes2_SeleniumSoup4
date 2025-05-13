@@ -54,15 +54,15 @@ interface StatsPanelProps {
 }
 
 // hhihi
-const minimapNodeColor = (node : Node) => {
+const minimapNodeColor = (node: Node) => {
   switch (node.type) {
-    case 'single':
-      return '#ff0072';
-    case 'couple':
-      return '#d1d1d1';
+    case "single":
+      return "#ff0072";
+    case "couple":
+      return "#d1d1d1";
     default:
       // greyish more white than coupe
-      return '#f0f0f0';
+      return "#f0f0f0";
   }
 };
 const getLayoutedElements = async (
@@ -220,6 +220,7 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
   const evtSourceRef = useRef<EventSource | null>(null);
   const [edges, setEdges] = useState<Edge[]>([]);
   const hasStartedRef = useRef(false);
+  const timeoutRef = useRef<number | null>(null);
   const hasRoot = useRef(false);
 
   const rootNode = useRef<Node | null>(null);
@@ -385,7 +386,6 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
     };
 
     let isPaused = false;
-    const timeoutRef = { current: 0 as number };
 
     function scheduleNext() {
       if (queueRef.current.length) {
@@ -433,7 +433,7 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
                   timeTaken: resultRef.current.timeTaken,
                 });
               } else {
-              onFinish({ nodesExplored: -1, timeTaken: "Result not found" });
+                onFinish({ nodesExplored: -1, timeTaken: "Result not found" });
               }
               if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
@@ -461,28 +461,14 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
       timeoutRef.current = window.setTimeout(
         scheduleNext,
         // ms
-         800
+        800
       );
     }
-
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) {
-        isPaused = true;
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-          timeoutRef.current = 0;
-        }
-      } else {
-        isPaused = false;
-        scheduleNext(); // resume ticking
-      }
-    });
 
     scheduleNext();
 
     // 3) cleanup
     return () => {
-      clearTimeout(timeoutRef.current);
       es.close();
     };
   }, [loading, addNode, queryParams]);
@@ -592,8 +578,8 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
         });
 
         // now hook up the first real couple(s)
-        if (treeData.recipeTree.Recipes) {
-          treeData.recipeTree.Recipes.forEach((pair: any) => {
+        if (treeData.recipeTree.recipes) {
+          treeData.recipeTree.recipes.forEach((pair: any) => {
             walkPair(pair.left, pair.right, rootId, true);
           });
         }
@@ -683,6 +669,11 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
     hasRoot.current = false;
     rootNode.current = null;
     nodeCountRef.current = 1;
+
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
 
     if (rfInstance) {
       rfInstance.setViewport({ x: 0, y: 0, zoom: 1 });

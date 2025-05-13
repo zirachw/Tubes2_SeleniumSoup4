@@ -3,15 +3,16 @@ import React, { useState, useEffect } from "react";
 import { Sidebar, TreeViewer, StatsPanel } from "@/components";
 import { ElementsData } from "@/types";
 import toast from "react-hot-toast";
+import { Toast } from "react-hot-toast";
 
 // im kinda lazy to move these interface to /types
 interface QueryParams {
-    element: string | null;
-    algorithm: string | null;
-    multipleRecipes: boolean;
-    liveUpdate: boolean;
-    count: number | "all";
-  }
+  element: string | null;
+  algorithm: string | null;
+  multipleRecipes: boolean;
+  liveUpdate: boolean;
+  count: number | "all";
+}
 
 interface StatsPanelProps {
   nodesExplored: number;
@@ -33,12 +34,11 @@ const Page: React.FC = () => {
   // State for sidebar
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [stats, setStats] = useState<StatsPanelProps>({
-    nodesExplored:  -1,
+    nodesExplored: -1,
     timeTaken: "-",
   });
 
   const [mainToast, setMainToast] = useState<string | undefined>();
-
 
   // State for elements data
   const [elementsData, setElementsData] = useState<ElementsData>({});
@@ -99,34 +99,79 @@ const Page: React.FC = () => {
       nodesExplored: -1,
       timeTaken: "-",
     });
-    if(params.liveUpdate){
-    const randomMsg =
-      loadingMessages[Math.floor(Math.random() * loadingMessages.length)];
-    setMainToast(toast.loading(randomMsg));
+    if (params.liveUpdate) {
+      const randomMsg =
+        loadingMessages[Math.floor(Math.random() * loadingMessages.length)];
+      setMainToast(toast.loading(randomMsg));
+    }
+    if (params.element && elementsData[params.element]) {
+      const tier = elementsData[params.element].tier;
+      if (tier > 5) {
+        // warning
+        toast.custom(
+          (t: Toast) => (
+            <div
+              className={`
+        ${t.visible ? "animate-enter" : "animate-leave"}
+        max-w-md w-full bg-yellow-50 border-l-4 border-yellow-400
+        shadow-lg rounded-md p-4 flex items-start space-x-3
+      `}
+            >
+              <span className="text-2xl">⚠️</span>
+              <div className="flex-1">
+                <p className="font-semibold text-yellow-800">
+                  Warning: Tier {tier} Element
+                </p>
+                <p className="mt-1 text-sm text-yellow-700 leading-relaxed whitespace-pre-wrap">
+                  Please refresh the page if unexpected behavior happens{" "}
+                  <strong>and</strong> don’t switch focus too often.
+                </p>
+              </div>
+              <button
+                className="text-yellow-500 hover:text-yellow-700 ml-2"
+                onClick={() => toast.dismiss(t.id)}
+              >
+                ✕
+              </button>
+            </div>
+          ),
+          {
+            duration: 5000,
+            position: "bottom-center",
+          }
+        );
+      }
     }
     setSidebarOpen(false);
   };
 
-  const handleFinishProcess = (stats : StatsPanelProps) => {
+  const handleFinishProcess = (stats: StatsPanelProps) => {
     setShouldSendRequest(false);
     setIsProcessing(false);
     setStats(stats);
     toast.success("Process Finished", { id: mainToast });
     console.log("Process Finished:");
-  }
+  };
 
   const handleErrorProcess = (error: string) => {
     setShouldSendRequest(false);
     setIsProcessing(false);
     toast.error("Process Failed: " + error, { id: mainToast });
     console.log("Process Failed:", error);
-  }
+  };
 
   return (
     <div className="flex min-h-screen bg-white relative">
       {/* Main content */}
-      
-      <TreeViewer elementsData={elementsData} loading={loading} queryParams={queryParams} trigger={shouldSendRequest} onFinish={handleFinishProcess} onError={handleErrorProcess}/>
+
+      <TreeViewer
+        elementsData={elementsData}
+        loading={loading}
+        queryParams={queryParams}
+        trigger={shouldSendRequest}
+        onFinish={handleFinishProcess}
+        onError={handleErrorProcess}
+      />
 
       {/* Sidebar Toggle Button - visible when sidebar is closed */}
       {!sidebarOpen && (
@@ -155,7 +200,6 @@ const Page: React.FC = () => {
         nodesExplored={stats.nodesExplored}
         timeTaken={stats.timeTaken}
       />
-        
     </div>
   );
 };

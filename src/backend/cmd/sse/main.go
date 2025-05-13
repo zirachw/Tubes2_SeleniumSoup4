@@ -14,6 +14,14 @@ import (
 	"github.com/zirachw/Tubes2_SeleniumSoup4/internal/search"
 )
 
+type ResultData struct {
+	Element       string      `json:"element"`
+	UniquePaths   int         `json:"uniquePaths"`
+	TimeTaken     string      `json:"timeTaken"`
+	NodesExplored int         `json:"nodesExplored"`
+	RecipeTree    interface{} `json:"recipeTree"`
+}
+
 func sseHandler(recipeMap map[string]scraper.ElementData) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
@@ -39,6 +47,8 @@ func sseHandler(recipeMap map[string]scraper.ElementData) http.Handler {
 
 		updates := make(chan search.Update)
 		var tree search.Tree
+
+		start := time.Now()
 		var counter uint64
 		nextID := func() uint64 { return atomic.AddUint64(&counter, 1) }
 
@@ -126,14 +136,53 @@ func sseHandler(recipeMap map[string]scraper.ElementData) http.Handler {
 				if !ok {
 					sendBatch()
 					fmt.Printf("search finished, sending final update\n")
+
+					elapsed := time.Since(start)
+
+					// 3) If we still didn’t find anything, warn
+					if tree == nil || tree.UniquePaths == 0 {
+						fmt.Fprintf(os.Stderr, "Element %q not found or no paths\n", query.Get("element"))
+						// But we continue to output JSON below
+					}
+
+					// 4) Print and count nodes
+					nodeCount := 0 // nanti update
+					// printRecipeTree(rootEl, "")
+
+					fmt.Printf("\nTotal nodes explored: %d\n", nodeCount)
+					fmt.Printf("Unique paths found: %d\n", tree.UniquePaths)
+					fmt.Printf("Time taken: %v\n", elapsed)
+
+					// 5) Emit JSON
+					out := ResultData{
+						Element:       query.Get("element"),
+						UniquePaths:   tree.UniquePaths,
+						TimeTaken:     elapsed.String(),
+						NodesExplored: nodeCount,
+						RecipeTree: func() *search.Target {
+							if query.Get("liveUpdate") == "true" {
+								return nil
+							}
+							return tree
+						}(),
+					}
+					buf, err := json.Marshal(out)
+					if err != nil {
+						log.Fatalf("Error marshaling JSON: %v", err)
+					}
+					// write to user client
+					fmt.Fprintf(w, "data: %s\n\n", buf)
+					flusher.Flush()
 					return
 				}
 				buffer = append(buffer, upd)
 				// print update to stdout
-				fmt.Printf(
-					"  → Stage=%-15s Elem=%-10s Tier=%2d Recipe#=%2d Info=%s\n parentID=%d\n, leftID=%d\n, rightID=%d\n",
-					upd.Stage, upd.ElementName, upd.Tier, upd.RecipeIndex, upd.Info, upd.ParentID, upd.LeftID, upd.RightID,
-				)
+				/*
+					fmt.Printf(
+						"  → Stage=%-15s Elem=%-10s Tier=%2d Recipe#=%2d Info=%s\n parentID=%d\n, leftID=%d\n, rightID=%d\n",
+						upd.Stage, upd.ElementName, upd.Tier, upd.RecipeIndex, upd.Info, upd.ParentID, upd.LeftID, upd.RightID,
+					)
+				*/
 				if len(buffer) >= maxBatch {
 					if err := sendBatch(); err != nil {
 						log.Println("sse write error:", err)
