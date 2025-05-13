@@ -4,7 +4,6 @@ import { Sidebar, TreeViewer, StatsPanel } from "@/components";
 import { ElementsData } from "@/types";
 import toast from "react-hot-toast";
 import { Toast } from "react-hot-toast";
-import { unique } from "next/dist/build/utils";
 
 // im kinda lazy to move these interface to /types
 interface QueryParams {
@@ -110,43 +109,43 @@ const Page: React.FC = () => {
       const randomMsg =
         loadingMessages[Math.floor(Math.random() * loadingMessages.length)];
       setMainToast(toast.loading(randomMsg));
-    }
-    if (params.element && elementsData[params.element]) {
-      const tier = elementsData[params.element].tier;
-      if (tier > 5) {
-        // warning
-        toast.custom(
-          (t: Toast) => (
-            <div
-              className={`
+      if (params.element && elementsData[params.element]) {
+        const tier = elementsData[params.element].tier;
+        if (tier > 5) {
+          // warning
+          toast.custom(
+            (t: Toast) => (
+              <div
+                className={`
         ${t.visible ? "animate-enter" : "animate-leave"}
         max-w-md w-full bg-yellow-50 border-l-4 border-yellow-400
         shadow-lg rounded-md p-4 flex items-start space-x-3
       `}
-            >
-              <span className="text-2xl">⚠️</span>
-              <div className="flex-1">
-                <p className="font-semibold text-yellow-800">
-                  Warning: Tier {tier} Element
-                </p>
-                <p className="mt-1 text-sm text-yellow-700 leading-relaxed whitespace-pre-wrap">
-                  Please refresh the page if unexpected behavior happens{" "}
-                  <strong>and</strong> don’t switch focus too often.
-                </p>
-              </div>
-              <button
-                className="text-yellow-500 hover:text-yellow-700 ml-2"
-                onClick={() => toast.dismiss(t.id)}
               >
-                ✕
-              </button>
-            </div>
-          ),
-          {
-            duration: 5000,
-            position: "bottom-center",
-          }
-        );
+                <span className="text-2xl">⚠️</span>
+                <div className="flex-1">
+                  <p className="font-semibold text-yellow-800">
+                    Warning: Tier {tier} Element
+                  </p>
+                  <p className="mt-1 text-sm text-yellow-700 leading-relaxed whitespace-pre-wrap">
+                    Please refresh the page if unexpected behavior happens{" "}
+                    <strong>and</strong> don’t switch tab focus too often.
+                  </p>
+                </div>
+                <button
+                  className="text-yellow-500 hover:text-yellow-700 ml-2"
+                  onClick={() => toast.dismiss(t.id)}
+                >
+                  ✕
+                </button>
+              </div>
+            ),
+            {
+              duration: 5000,
+              position: "bottom-center",
+            }
+          );
+        }
       }
     }
     setSidebarOpen(false);

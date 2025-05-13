@@ -385,7 +385,7 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
       es.close();
     };
 
-    let isPaused = false;
+    const isPaused = false;
 
     function scheduleNext() {
       if (queueRef.current.length) {
