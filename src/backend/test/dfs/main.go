@@ -17,8 +17,6 @@ var (
 		"element to search for")
 	flagPaths = flag.Int("p", 1,
 		"max unique paths (if 1 uses DFSSearch, >1 uses DFSSearchParallel)")
-	flagUpdates = flag.Bool("u", false,
-		"stream live updates (true) or run silently (false)")
 	flagOutput = flag.String("o", "",
 		"optional output JSON file name (e.g. result.json)")
 )
@@ -53,31 +51,24 @@ func main() {
 	var counter uint64
 	nextID := func() uint64 { return atomic.AddUint64(&counter, 1) }
 
-	var nodesExplored uint64
+	updates := make(chan search.Update)	
 
-	if *flagUpdates {
-		updates := search.DFSWithUpdates(
-			recipeMap,
-			*flagElement,
-			*flagPaths,
-			&tree,
-			nextID,
+	nodesExplored := search.DFS(
+		recipeMap,
+		*flagElement,
+		*flagPaths,
+		&tree,
+		updates,
+		nextID,
+		0,
+	)
+
+	fmt.Println("⏳ Streaming DFS events:")
+	for evt := range updates {
+		fmt.Printf(
+			"  → Stage=%-15s Elem=%-10s Tier=%2d Recipe#=%2d Info=%s\n",
+			evt.Stage, evt.ElementName, evt.Tier, evt.RecipeIndex, evt.Info,
 		)
-		fmt.Println("⏳ Streaming DFS events:")
-		for evt := range updates {
-			fmt.Printf(
-				"  → Stage=%-15s Elem=%-10s Tier=%2d Recipe#=%2d Info=%s\n",
-				evt.Stage, evt.ElementName, evt.Tier, evt.RecipeIndex, evt.Info,
-			)
-		}
-		nodesExplored = search.GetNodeExplored()
-
-	} else {
-		if *flagPaths <= 1 {
-			nodesExplored = search.DFS(recipeMap, *flagElement, *flagPaths, &tree, nextID)
-		} else {
-			nodesExplored = search.DFSParallel(recipeMap, *flagElement, *flagPaths, &tree, nextID)
-		}
 	}
 
 	elapsed := time.Since(start)
@@ -87,7 +78,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Create an Element from the Tree for printing and counting
 	rootEl := &search.Element{
 		Name:    tree.Name,
 		Tier:    tree.Tier,
@@ -98,7 +88,6 @@ func main() {
 	fmt.Println("\n📖 Final DFS Recipe Tree:")
 	search.PrintRecipeTree(rootEl, "")
 	
-	// Count nodes in the tree
 	nodesInTree := search.CountTreeNodes(rootEl)
 	
 	fmt.Printf("\nNodes explored during DFS: %d\n", nodesExplored)
