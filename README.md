@@ -108,7 +108,6 @@ Place a single `.env` file in the **project root**. Docker Compose will automati
 **`./.env`**  
 ```dotenv
 # Backend
-PORT=8080
 CORS_ALLOWED_ORIGIN=http://localhost:3000
 
 # Frontend
@@ -144,7 +143,6 @@ Create **two** `.env` files—one in the `src/backend` folder and one in the `sr
 **`src/backend/.env`**
 
 ```dotenv
-PORT=8080
 CORS_ALLOWED_ORIGIN=http://localhost:3000
 ```
 
@@ -154,37 +152,6 @@ CORS_ALLOWED_ORIGIN=http://localhost:3000
 NODE_ENV=production
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
 ```
-
-Then:
-
-1. **Backend**
-
-   ```bash
-   cd src/backend
-   # Ensure src/backend/.env exists
-   go run ./cmd/server
-   ```
-
-   *Server listens on the port defined in src/backend/.env (default 8080).*
-
-2. **Frontend**
-
-   ```bash
-   cd src/frontend
-   # Ensure src/frontend/.env.local exists
-   npm install
-   npm run dev
-   ```
-
-   *App opens at [http://localhost:3000](http://localhost:3000) and proxies API calls to the URL defined in NEXT\_PUBLIC\_API\_BASE\_URL.*
-
----
-
-> 🎉 Now you’re ready to explore the Little Alchemy 2 recipe finder with BFS/DFS and live SSE updates!
-
-```
-```
-
 
 1. **Backend**
    ```bash

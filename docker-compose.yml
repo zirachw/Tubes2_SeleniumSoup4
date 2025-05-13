@@ -28,4 +28,4 @@ services:
     env_file:
       - .env
     ports:
-      - "${PORT}:${PORT}"
+      - "8080:8080"
