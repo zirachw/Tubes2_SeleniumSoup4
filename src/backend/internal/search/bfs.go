@@ -5,15 +5,26 @@ import (
 	"runtime"
 	"sort"
 	"sync"
+	"sync/atomic"
 
 	"github.com/zirachw/Tubes2_SeleniumSoup4/internal/scraper"
 )
+
+var bfsNodeExplored uint64
+
+func GetBFSNodeExplored() uint64 {
+	return atomic.LoadUint64(&bfsNodeExplored)
+}
+func ResetBFSNodeExplored() {
+	atomic.StoreUint64(&bfsNodeExplored, 0)
+}
 
 /**
  *  BFS runs a bottom-up DP: it builds up to maxPaths example subtrees for
  *  Every element in ascending tier order, then returns the ones for targetName.
  */
 func BFS(recipeMap map[string]scraper.ElementData, targetName string, maxPaths int) ([]*Element, error) {
+	ResetBFSNodeExplored()
 
 	// 1) Group elements by tier
 	byTier := make(map[int][]string, len(recipeMap))
@@ -33,6 +44,7 @@ func BFS(recipeMap map[string]scraper.ElementData, targetName string, maxPaths i
 	// 3) Initialize base elements (tier 0)
 	for _, name := range byTier[0] {
 		memo[name] = []*Element{{Name: name, Tier: 0}}
+		atomic.AddUint64(&bfsNodeExplored, 1)
 	}
 
 	// 4) DP upwards through tiers
@@ -41,6 +53,7 @@ func BFS(recipeMap map[string]scraper.ElementData, targetName string, maxPaths i
 			continue
 		}
 		for _, name := range byTier[tier] {
+			atomic.AddUint64(&bfsNodeExplored, 1)
 			data := recipeMap[name]
 			var examples []*Element
 
@@ -62,6 +75,7 @@ func BFS(recipeMap map[string]scraper.ElementData, targetName string, maxPaths i
 						if data.Tier <= L.Tier || data.Tier <= R.Tier {
 							continue
 						}
+						atomic.AddUint64(&bfsNodeExplored, 1)
 						examples = append(examples, &Element{
 							Name: name,
 							Tier: data.Tier,
@@ -101,6 +115,7 @@ func BFS(recipeMap map[string]scraper.ElementData, targetName string, maxPaths i
  *  then returns up to maxPaths for targetName.
  */
 func BFSParallel(recipeMap map[string]scraper.ElementData, targetName string, maxPaths int) ([]*Element, error) {
+	ResetBFSNodeExplored()
 
 	// 1) bucket names by tier
 	byTier := make(map[int][]string, len(recipeMap))
@@ -120,6 +135,7 @@ func BFSParallel(recipeMap map[string]scraper.ElementData, targetName string, ma
 	// 3) seed tier 0
 	for _, name := range byTier[0] {
 		memo[name] = []*Element{{Name: name, Tier: 0}}
+		atomic.AddUint64(&bfsNodeExplored, 1)
 	}
 
 	// 4) process higher tiers in parallel per element
@@ -139,6 +155,7 @@ func BFSParallel(recipeMap map[string]scraper.ElementData, targetName string, ma
 				defer wg.Done()
 				defer func() { <-sem }()
 
+				atomic.AddUint64(&bfsNodeExplored, 1)
 				data := recipeMap[el]
 				var examples []*Element
 
@@ -156,6 +173,7 @@ func BFSParallel(recipeMap map[string]scraper.ElementData, targetName string, ma
 							if data.Tier <= L.Tier || data.Tier <= R.Tier {
 								continue
 							}
+							atomic.AddUint64(&bfsNodeExplored, 1)
 							examples = append(examples, &Element{
 								Name:    el,
 								Tier:    data.Tier,
@@ -199,108 +217,138 @@ func BFSParallel(recipeMap map[string]scraper.ElementData, targetName string, ma
 /**
  *  CreateFullTree takes the raw []*Element paths for the same target
  *  and builds a single *Target containing all their top-level recipes.
- *  It emits Update events when ‘updates’ is non-nil.
+ *  It emits Update events when 'updates' is non-nil.
  */
-func CreateFullTree(paths []*Element, updates chan<- Update, nextID func() uint64) *Target {
-	// 1) Build root Target as before
-	rootID := nextID()
-	tgt := &Target{Name: "", Tier: 0, Recipes: nil, UniquePaths: len(paths), ID: rootID}
-	if len(paths) == 0 {
-		return tgt
-	}
-	tgt.Name = paths[0].Name
-	tgt.Tier = paths[0].Tier
-	if updates != nil {
-		updates <- Update{Stage: "startBFS", ElementName: tgt.Name, Tier: tgt.Tier, Info: fmt.Sprintf("target id=%d", rootID)}
-	}
+func CreateFullTree(
+    paths []*Element,
+    updates chan<- Update,
+	name string,
+    nextID func() uint64,
+) *Target {
+    // 1) Build the root placeholder (ID=0 for now)
+    tgt := &Target{
+        Name:        name,
+        Tier:        0,
+        Recipes:     nil,
+        UniquePaths: len(paths),
+        ID:          0,
+    }
+    if len(paths) > 0 {
+        tgt.Name = paths[0].Name
+        tgt.Tier = paths[0].Tier
+    }
 
-	// 2) Clone memo to share identical subtrees
-	cloneMemo := make(map[*Element]*Element)
-	var clone func(src *Element) *Element
-	clone = func(src *Element) *Element {
-		if c, ok := cloneMemo[src]; ok {
-			return c
-		}
-		id := nextID()
-		node := &Element{Name: src.Name, Tier: src.Tier, ID: id}
-		cloneMemo[src] = node
-		if updates != nil {
-			updates <- Update{Stage: "createNode", ElementName: node.Name, Tier: node.Tier, Info: fmt.Sprintf("node id=%d", id)}
-		}
-		for idx, r := range src.Recipes {
-			L := clone(r.Left)
-			R := clone(r.Right)
-			if updates != nil {
-				updates <- Update{
-					Stage:       "startRecipe",
-					ElementName: node.Name,
-					Tier:        node.Tier,
-					RecipeIndex: idx,
-					ParentID:    node.ID,
-					LeftID:      L.ID,
-					RightID:     R.ID,
-					Info:        fmt.Sprintf("recipe %d for node %d", idx, node.ID),
-					LeftLabel:   L.Name,
-					RightLabel:  R.Name,
-				}
-			}
-			node.Recipes = append(node.Recipes, Recipe{Left: L, Right: R})
-		}
-		return node
-	}
+    // 2) Clone everything with ID=0 (we'll assign real IDs in BFS)
+    var clone func(src *Element) *Element
+    clone = func(src *Element) *Element {
+        node := &Element{
+            Name:    src.Name,
+            Tier:    src.Tier,
+            Recipes: nil,
+            ID:      0,
+        }
+        for _, r := range src.Recipes {
+            L := clone(r.Left)
+            R := clone(r.Right)
+            node.Recipes = append(node.Recipes, Recipe{Left: L, Right: R})
+        }
+        return node
+    }
 
-	// 3) Attach top‐level recipes **merging by parent signature**
-	seen := make(map[string]int) // signature -> index in tgt.Recipes
-	for pidx, rootSrc := range paths {
-		clonedRoot := clone(rootSrc)
-		for _, rec := range clonedRoot.Recipes {
-			sig := rec.Left.Name + "|" + rec.Right.Name
-			idx, exists := seen[sig]
-			if !exists {
-				// first time we see this parent combo: attach whole Recipe
-				tgt.Recipes = append(tgt.Recipes, rec)
-				idx = len(tgt.Recipes) - 1
-				seen[sig] = idx
-				if updates != nil {
-					updates <- Update{
-						Stage:       "attachTopRecipe",
-						ElementName: tgt.Name,
-						Tier:        tgt.Tier,
-						RecipeIndex: idx,
-						ParentID:    tgt.ID,
-						LeftID:      rec.Left.ID,
-						RightID:     rec.Right.ID,
-						Info:        fmt.Sprintf("path %d first attach of %s", pidx, sig),
-					}
-				}
-			} else {
-				// merge this child recipe into the existing right.Recipes
-				existing := &tgt.Recipes[idx]
-				// append all recipes under rec.Right into existing.Right.Recipes
-				for _, sub := range rec.Right.Recipes {
-					existing.Right.Recipes = append(existing.Right.Recipes, sub)
-					if updates != nil {
-						updates <- Update{
-							Stage:       "mergeRecipe",
-							ElementName: tgt.Name,
-							Tier:        tgt.Tier,
-							RecipeIndex: idx,
-							ParentID:    tgt.ID,
-							LeftID:      rec.Left.ID,
-							RightID:     rec.Right.ID,
-							Info:        fmt.Sprintf("path %d merge into %s", pidx, sig),
-						}
-					}
-				}
-			}
-		}
-	}
-	if updates != nil {
-		updates <- Update{
-			Stage:       "doneRecipe",
-			ElementName: tgt.Name,
-			Tier:        tgt.Tier,
-		}
-	}
-	return tgt
+    // 3) Merge top-level recipes by signature "Left|Right"
+    seen := make(map[string]int) // sig -> index in tgt.Recipes
+    for _, p := range paths {
+        rootClone := clone(p)
+        for _, rec := range rootClone.Recipes {
+            sig := rec.Left.Name + "|" + rec.Right.Name
+            if idx, ok := seen[sig]; !ok {
+                seen[sig] = len(tgt.Recipes)
+                tgt.Recipes = append(tgt.Recipes, rec)
+            } else {
+                existing := &tgt.Recipes[idx]
+                existing.Right.Recipes = append(existing.Right.Recipes, rec.Right.Recipes...)
+            }
+        }
+    }
+
+    // 4) Now do BFS, assigning IDs in order and emitting updates
+    // Assign root its ID
+    tgt.ID = nextID()
+    if updates != nil {
+        updates <- Update{
+            Stage:       "startBFS",
+            ElementName: tgt.Name,
+            Tier:        tgt.Tier,
+            Info:        fmt.Sprintf("root id=%d, merging %d paths", tgt.ID, len(paths)),
+        }
+    }
+
+    type item struct {
+        ParentID    uint64
+        RecipeIndex int
+        Node        *Element
+    }
+
+    queue := []item{}
+
+    // Enqueue top-level children, assigning their IDs immediately
+    for i, rec := range tgt.Recipes {
+        // left child
+        rec.Left.ID = nextID()
+        rec.Right.ID = nextID()
+
+        if updates != nil {
+            updates <- Update{
+                Stage:       "startRecipe",
+                ElementName: tgt.Name,
+                Tier:        tgt.Tier,
+                ParentID:    tgt.ID,
+                RecipeIndex: i,
+                LeftID:      rec.Left.ID,
+                RightID:     rec.Right.ID,
+                LeftLabel:   rec.Left.Name,
+                RightLabel:  rec.Right.Name,
+                Info:        fmt.Sprintf("recipe %d under parent %d", i, tgt.ID),
+            }
+        }
+        queue = append(queue, item{ParentID: rec.Left.ID, RecipeIndex: i, Node: rec.Left})
+        queue = append(queue, item{ParentID: rec.Right.ID, RecipeIndex: i, Node: rec.Right})
+    }
+
+    // Process the rest of the BFS
+    for head := 0; head < len(queue); head++ {
+        cur := queue[head]
+        for ci, childRec := range cur.Node.Recipes {
+            // Assign IDs just before emitting
+            childRec.Left.ID = nextID()
+            childRec.Right.ID = nextID()
+
+            if updates != nil {
+                updates <- Update{
+                    Stage:       "startRecipe",
+                    ElementName: cur.Node.Name,
+                    Tier:        cur.Node.Tier,
+                    ParentID:    cur.Node.ID,
+                    RecipeIndex: ci,
+                    LeftID:      childRec.Left.ID,
+                    RightID:     childRec.Right.ID,
+                    LeftLabel:   childRec.Left.Name,
+                    RightLabel:  childRec.Right.Name,
+                    Info:        fmt.Sprintf("recipe %d under parent %d", ci, cur.Node.ID),
+                }
+            }
+            queue = append(queue, item{ParentID: childRec.Left.ID, RecipeIndex: ci, Node: childRec.Left})
+            queue = append(queue, item{ParentID: childRec.Right.ID, RecipeIndex: ci, Node: childRec.Right})
+        }
+    }
+
+    if updates != nil {
+        updates <- Update{
+            Stage:       "doneRecipe",
+            ElementName: tgt.Name,
+            Tier:        tgt.Tier,
+            Info:        "completed BFS traversal",
+        }
+    }
+    return tgt
 }
