@@ -51,20 +51,25 @@ func main() {
 	var counter uint64
 	nextID := func() uint64 { return atomic.AddUint64(&counter, 1) }
 
-	updates := make(chan search.Update)	
+	updates := make(chan search.Update)
 
-	nodesExplored := search.DFS(
-		recipeMap,
-		*flagElement,
-		*flagPaths,
-		&tree,
-		updates,
-		nextID,
-		0,
-	)
+	var nodesExplored uint64
 
-	fmt.Println("⏳ Streaming DFS events:")
-	for evt := range updates {
+	go func() {
+		nodesExplored = search.DFS(
+			recipeMap,
+			*flagElement,
+			*flagPaths,
+			&tree,
+			updates,
+			nextID,
+			0,
+		)
+		close(updates) // Close the channel when done
+	}()
+
+// Now receive from the channel
+for evt := range updates {
 		fmt.Printf(
 			"  → Stage=%-15s Elem=%-10s Tier=%2d Recipe#=%2d Info=%s\n",
 			evt.Stage, evt.ElementName, evt.Tier, evt.RecipeIndex, evt.Info,
