@@ -1,14 +1,18 @@
 package search
 
+import (
+	"fmt"
+)
+
 /**
  *  Target element we’re searching for.
  */
 type Target struct {
-	Name        string
-	Tier        int
-	Recipes     []Recipe
-	UniquePaths int
-	ID          uint64
+	Name        string   `json:"name"`
+	Tier        int      `json:"tier"`
+	Recipes     []Recipe `json:"recipes"`
+	UniquePaths int      `json:"uniquePaths"`
+	ID          uint64   `json:"id"`
 }
 
 /**
@@ -51,4 +55,42 @@ type Update struct {
 
 	LeftLabel  string
 	RightLabel string
+}
+
+// Counts nodes in a recipe tree
+func CountTreeNodes(el *Element) int {
+    if el == nil {
+        return 0
+    }
+
+    count := 1 // Count this node
+    for _, r := range el.Recipes {
+        count += CountTreeNodes(r.Left)
+        count += CountTreeNodes(r.Right)
+    }
+    return count
+}
+
+// Prints a recipe tree structure
+func PrintRecipeTree(el *Element, indent string) int {
+    if el == nil {
+        return 0
+    }
+    fmt.Printf("%s%s (tier=%d, id=%d)\n", indent, el.Name, el.Tier, el.ID)
+
+    if len(el.Recipes) == 0 {
+        return 1
+    }
+    total := 0
+    for i, r := range el.Recipes {
+        fmt.Printf("%s  Recipe %d:\n", indent, i+1)
+        fmt.Printf("%s    Left ingredient:\n", indent)
+        lp := PrintRecipeTree(r.Left, indent+"      ")
+        fmt.Printf("%s    Right ingredient:\n", indent)
+        rp := PrintRecipeTree(r.Right, indent+"      ")
+        contrib := lp * rp
+        total += contrib
+        fmt.Printf("%s  Recipe %d contributes %d path(s)\n", indent, i+1, contrib)
+    }
+    return total
 }

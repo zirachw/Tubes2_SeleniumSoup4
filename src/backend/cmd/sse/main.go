@@ -73,7 +73,7 @@ func sseHandler(recipeMap map[string]scraper.ElementData) http.Handler {
 
 			go func() {
 				defer close(updates)
-				search.DFSInternal( // or DFSSearchWithUpdates
+				search.DFS( // or DFSSearchWithUpdates
 					recipeMap,
 					query.Get("element"),
 					count,
@@ -88,14 +88,14 @@ func sseHandler(recipeMap map[string]scraper.ElementData) http.Handler {
 			var err error
 			var paths []*search.Element
 
-			paths, err = search.BFSParallel(recipeMap, query.Get("element"), count)
+			paths, err = search.BFS(recipeMap, query.Get("element"), count)
 			if err != nil {
 				log.Fatalf("BFS search error: %v", err)
 				return
 			}
 
 			go func() {
-				tree = search.CreateFullTree(paths, updates, nextID)
+				tree = search.CreateFullTree(paths, updates, query.Get("element"), nextID)
 				close(updates)
 			}()
 		}
@@ -134,6 +134,10 @@ func sseHandler(recipeMap map[string]scraper.ElementData) http.Handler {
 
 			case upd, ok := <-updates:
 				if !ok {
+					buffer = append(buffer, search.Update{
+						Stage:       "doneRecipe",
+						ElementName: query.Get("element"),
+					})
 					sendBatch()
 					fmt.Printf("search finished, sending final update\n")
 
