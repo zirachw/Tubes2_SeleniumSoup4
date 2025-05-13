@@ -4,11 +4,14 @@ services:
     build:
       context: ./src/frontend
       dockerfile: Dockerfile
-      target: dev
+      target: production
+      args:
+        - NODE_ENV=${NODE_ENV}
+        - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
+    env_file:
+      - .env
     ports:
       - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8080
     depends_on:
       - backend
     volumes:
@@ -19,5 +22,10 @@ services:
     build:
       context: ./src/backend
       dockerfile: Dockerfile
+      args:
+        - PORT=${PORT}
+        - CORS_ALLOWED_ORIGIN=${CORS_ALLOWED_ORIGIN}
+    env_file:
+      - .env
     ports:
-      - "8080:8080"
+      - "${PORT}:${PORT}"

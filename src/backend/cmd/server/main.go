@@ -27,7 +27,11 @@ type ResultData struct {
 
 func sseHandler(recipeMap map[string]scraper.ElementData) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		corsOrigin := os.Getenv("CORS_ALLOWED_ORIGIN")
+		if corsOrigin == "" {
+			corsOrigin = "*" // fallback
+		}
+		w.Header().Set("Access-Control-Allow-Origin", corsOrigin)
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 
 		w.Header().Set("Content-Type", "text/event-stream")
@@ -237,12 +241,17 @@ func main() {
 	// Run the scraper and get the data map
 	data := scraper.Run()
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080" // fallback default
+	}
+
 	// Print out the number of elements collected
 	fmt.Printf("Successfully collected data for %d elements\n", len(data))
 
 	mux := http.NewServeMux()
 	mux.Handle("/stream", sseHandler(data))
 	mux.HandleFunc("/api/data", dataHandler)
-	log.Println("listening on :8080")
-	log.Fatal(http.ListenAndServe(":8080", mux))
+	log.Println("listening on :" + port)
+	log.Fatal(http.ListenAndServe(":"+port, mux))
 }

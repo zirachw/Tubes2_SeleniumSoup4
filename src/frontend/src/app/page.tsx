@@ -75,7 +75,8 @@ const Page: React.FC = () => {
       }
 
       try {
-        const response = await fetch("http://localhost:8080/api/data"); // replace with actual API later
+  
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/data`); // replace with actual API later
         const result = await response.json();
         localStorage.setItem("elements_data", JSON.stringify(result));
         setElementsData(result);

@@ -358,7 +358,7 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
       }, {} as Record<string, string>)
     ).toString();
 
-    const es = new EventSource(`http://localhost:8080/stream?${query}`);
+    const es = new EventSource(`${process.env.NEXT_PUBLIC_API_BASE_URL}/stream?${query}`);
     evtSourceRef.current = es;
     es.onmessage = (e) => {
       try {
@@ -619,7 +619,7 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
       }, {} as Record<string, string>)
     ).toString();
 
-    const es = new EventSource(`http://localhost:8080/stream?${query}`);
+    const es = new EventSource(`${process.env.NEXT_PUBLIC_API_BASE_URL}/stream?${query}`);
     evtSourceRef.current = es;
     es.onmessage = (e) => {
       try {
