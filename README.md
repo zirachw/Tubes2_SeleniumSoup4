@@ -180,12 +180,6 @@ Then:
 
 ---
 
-> 🎉 Now you’re ready to explore the Little Alchemy 2 recipe finder with BFS/DFS and live SSE updates!
-
-```
-```
-
-
 1. **Backend**
    ```bash
    cd src/backend
