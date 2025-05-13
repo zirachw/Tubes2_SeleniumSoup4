@@ -85,7 +85,7 @@ func sseHandler(recipeMap map[string]scraper.ElementData) http.Handler {
 			}
 
 			go func() {
-				tree = search.CreateFullTree(paths, updates, nextID)
+				tree = search.CreateFullTree(paths, updates, query.Get("element"), nextID)
 				close(updates)
 			}()
 		}
@@ -124,6 +124,10 @@ func sseHandler(recipeMap map[string]scraper.ElementData) http.Handler {
 
 			case upd, ok := <-updates:
 				if !ok {
+					buffer = append(buffer, search.Update{
+						Stage:       "doneRecipe",
+						ElementName: query.Get("element"),
+					})
 					sendBatch()
 					fmt.Printf("search finished, sending final update\n")
 					return
