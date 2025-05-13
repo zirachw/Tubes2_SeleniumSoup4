@@ -88,5 +88,26 @@ Then:
    npm run dev
    ```
    > Opens at http://localhost:3000, API proxy to http://localhost:8080
+## Algorithm Explanation
+### BFS
+1. Group all elements into \textit{bucket} based on their tier values.
 
+2. Initialize \texttt{memo} with tier 0 elements. Add each base element as a single node and mark it as traced.
+
+3. For each element in a given tier, try to form a new path from that element and the elements in \texttt{memo}. If the combination is valid and the number of paths does not exceed \texttt{maxPaths}, add the path to the memo.
+
+4. Once all tiers are complete, check if the target element is available in \texttt{memo}. If yes, retrieve the \texttt{maxPaths} path that leads to that target.
+
+5. Make the target node the root of the tree.
+
+6. Insert as many element paths into the tree as required.
+
+### DFS
+1. Verify the existence of the target element in the data set. If the element is not found, the process is stopped. If found, a root node is created as the initial representation of the solution structure.
+    
+2. Base case: If the target element is in tier 0, the recipe search is complete, as it is a base element.
+    
+3. Recursion: Count the number of unique paths of all possible component pairs. Then, find recipes for both elements from as many recipe pairs as the desired number of recipes with DFS.
+    
+4. Merge all valid subtrees into the root node.
 ---
