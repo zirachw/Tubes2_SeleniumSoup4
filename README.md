@@ -65,9 +65,9 @@
 
 ### **Space for Improvement:** 
 
-1. **Bidirectional search**
+1. **`(Bonus)` Bidirectional search**
 
-
+--- 
 ## Algorithm Explanation
 ### BFS
 1. Group all elements into buckets based on their tier values.
