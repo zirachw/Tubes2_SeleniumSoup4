@@ -52,11 +52,13 @@ func main() {
 	nextID := func() uint64 { return atomic.AddUint64(&counter, 1) }
 
 	updates := make(chan search.Update)
-
-	var nodesExplored uint64
+	
+	// Create a local counter for node exploration
+	var nodeCounter uint64 = 0
 
 	go func() {
-		nodesExplored = search.DFS(
+		// Pass the address of nodeCounter to track nodes explored
+		search.DFS(
 			recipeMap,
 			*flagElement,
 			*flagPaths,
@@ -64,12 +66,13 @@ func main() {
 			updates,
 			nextID,
 			0,
+			&nodeCounter,
 		)
 		close(updates) // Close the channel when done
 	}()
 
-// Now receive from the channel
-for evt := range updates {
+	// Now receive from the channel
+	for evt := range updates {
 		fmt.Printf(
 			"  → Stage=%-15s Elem=%-10s Tier=%2d Recipe#=%2d Info=%s\n",
 			evt.Stage, evt.ElementName, evt.Tier, evt.RecipeIndex, evt.Info,
@@ -95,7 +98,7 @@ for evt := range updates {
 	
 	nodesInTree := search.CountTreeNodes(rootEl)
 	
-	fmt.Printf("\nNodes explored during DFS: %d\n", nodesExplored)
+	fmt.Printf("\nNodes explored during DFS: %d\n", nodeCounter)
 	fmt.Printf("Nodes in final tree: %d\n", nodesInTree)
 	fmt.Printf("Unique paths: %d\n", tree.UniquePaths)
 	fmt.Printf("Time taken: %v\n", elapsed)
@@ -105,7 +108,7 @@ for evt := range updates {
 			Element:       tree.Name,
 			UniquePaths:   tree.UniquePaths,
 			TimeTaken:     elapsed.String(),
-			NodesExplored: nodesExplored,
+			NodesExplored: nodeCounter,
 			NodesInTree:   nodesInTree,
 			RecipeTree:    rootEl,
 		}

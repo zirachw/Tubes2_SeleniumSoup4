@@ -49,7 +49,10 @@ func main() {
 	nextID := func() uint64 { return atomic.AddUint64(&counter, 1) }
 
     var paths []*search.Element
-    paths, err = search.BFS(recipeMap, *flagElement, *flagPaths)
+    var nodesExplored uint64
+    
+    // Call the updated BFS function that returns the node count
+    paths, nodesExplored, err = search.BFS(recipeMap, *flagElement, *flagPaths)
 
     if err != nil {
         log.Fatalf("BFS search error: %v", err)
@@ -78,8 +81,6 @@ func main() {
     if tree == nil || tree.UniquePaths == 0 {
         fmt.Fprintf(os.Stderr, "Element %q not found or no paths\n", *flagElement)
     }
-
-    nodesExplored := search.GetBFSNodeExplored()
 
     rootEl := &search.Element{
         Name:    tree.Name,

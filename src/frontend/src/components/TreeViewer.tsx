@@ -47,6 +47,8 @@ interface Update {
 
 interface StatsPanelProps {
   nodesExplored: number;
+  nodesInTree: number;
+  uniquePaths: number;
   timeTaken: string;
   /*  optional extra classes if i need to tweak positioning */
   className?: string;
@@ -428,10 +430,12 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
               ) {
                 onFinish({
                   nodesExplored: resultRef.current.nodesExplored,
+                  nodesInTree: resultRef.current.nodesInTree,
+                  uniquePaths: resultRef.current.uniquePaths,
                   timeTaken: resultRef.current.timeTaken,
                 });
               } else {
-                onFinish({ nodesExplored: -1, timeTaken: "Result not found" });
+                onFinish({ nodesExplored: -1, nodesInTree: -1, uniquePaths: -1, timeTaken: "Result not found" });
               }
               if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
@@ -581,6 +585,8 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
       // malas validate
       onFinish({
         nodesExplored: treeData.nodesExplored,
+        nodesInTree: treeData.nodesInTree,
+        uniquePaths: treeData.uniquePaths,
         timeTaken: treeData.timeTaken,
       });
 

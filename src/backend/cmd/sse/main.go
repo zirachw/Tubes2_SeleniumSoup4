@@ -19,6 +19,7 @@ type ResultData struct {
 	UniquePaths   int         `json:"uniquePaths"`
 	TimeTaken     string      `json:"timeTaken"`
 	NodesExplored int         `json:"nodesExplored"`
+	NodesInTree   int         `json:"nodesInTree"`
 	RecipeTree    interface{} `json:"recipeTree"`
 }
 
@@ -69,11 +70,12 @@ func sseHandler(recipeMap map[string]scraper.ElementData) http.Handler {
 			}
 		}
 
+		var nodesExplored uint64 = 0;
 		if query.Get("algorithm") == "DFS" {
 
 			go func() {
 				defer close(updates)
-				search.DFS( // or DFSSearchWithUpdates
+				nodesExplored = search.DFS(
 					recipeMap,
 					query.Get("element"),
 					count,
@@ -81,6 +83,7 @@ func sseHandler(recipeMap map[string]scraper.ElementData) http.Handler {
 					updates,
 					nextID,
 					0,
+					&nodesExplored,
 				)
 			}()
 		} else if query.Get("algorithm") == "BFS" {
@@ -88,7 +91,7 @@ func sseHandler(recipeMap map[string]scraper.ElementData) http.Handler {
 			var err error
 			var paths []*search.Element
 
-			paths, err = search.BFS(recipeMap, query.Get("element"), count)
+			paths, nodesExplored, err = search.BFS(recipeMap, query.Get("element"), count)
 			if err != nil {
 				log.Fatalf("BFS search error: %v", err)
 				return
@@ -143,17 +146,35 @@ func sseHandler(recipeMap map[string]scraper.ElementData) http.Handler {
 
 					elapsed := time.Since(start)
 
-					// 3) If we still didn’t find anything, warn
+					// 3) If we still didn't find anything, warn
 					if tree == nil || tree.UniquePaths == 0 {
 						fmt.Fprintf(os.Stderr, "Element %q not found or no paths\n", query.Get("element"))
-						// But we continue to output JSON below
 					}
 
-					// 4) Print and count nodes
-					nodeCount := 0 // nanti update
-					// printRecipeTree(rootEl, "")
+					// Create recipe tree for counting nodes (if needed)
+					var nodesInTree int = 0
+					var treeToSend interface{} = nil
+					
+					if tree != nil {
+						// Convert the Tree to Element for counting
+						rootEl := &search.Element{
+							Name:    tree.Name,
+							Tier:    tree.Tier,
+							Recipes: tree.Recipes,
+							ID:      tree.ID,
+						}
+						
+						// Count nodes in the tree
+						nodesInTree = search.CountTreeNodes(rootEl)
+						
+						// Decide what to send as recipe tree
+						if query.Get("liveUpdate") != "true" {
+							treeToSend = tree
+						}
+					}
 
-					fmt.Printf("\nTotal nodes explored: %d\n", nodeCount)
+					fmt.Printf("\nTotal nodes explored: %d\n", nodesExplored)
+					fmt.Printf("Nodes in final tree: %d\n", nodesInTree)
 					fmt.Printf("Unique paths found: %d\n", tree.UniquePaths)
 					fmt.Printf("Time taken: %v\n", elapsed)
 
@@ -162,13 +183,9 @@ func sseHandler(recipeMap map[string]scraper.ElementData) http.Handler {
 						Element:       query.Get("element"),
 						UniquePaths:   tree.UniquePaths,
 						TimeTaken:     elapsed.String(),
-						NodesExplored: nodeCount,
-						RecipeTree: func() *search.Target {
-							if query.Get("liveUpdate") == "true" {
-								return nil
-							}
-							return tree
-						}(),
+						NodesExplored: int(nodesExplored),
+						NodesInTree:   nodesInTree,
+						RecipeTree:    treeToSend,
 					}
 					buf, err := json.Marshal(out)
 					if err != nil {

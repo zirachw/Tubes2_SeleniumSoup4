@@ -315,7 +315,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                value={isAllSelected ? "?" : recipeCount}
+                value={
+                  isAllSelected
+                    ? "?"
+                    : !isMultipleRecipeMode
+                    ? "1"
+                    : recipeCount
+                }
                 onChange={handleRecipeCountChange}
                 placeholder="1"
                 disabled={!isMultipleRecipeMode || isAllSelected}

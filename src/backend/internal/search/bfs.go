@@ -10,118 +10,178 @@ import (
 	"github.com/zirachw/Tubes2_SeleniumSoup4/internal/scraper"
 )
 
-var bfsNodeExplored uint64
+const (
+    MAX_RECIPES_PER_ELEMENT = 50     // Max number of recipes to store per element
+    MAX_LEFT_COMBINATIONS   = 20     // Max left elements to consider for combinations
+    MAX_RIGHT_COMBINATIONS  = 20     // Max right elements to consider for combinations  
+    MAX_GOROUTINES          = 4      // Max concurrent goroutines
+    MAX_ELEMENTS_PER_TIER   = 1000   // Max elements to process in a tier
+)
 
-func GetBFSNodeExplored() uint64 {
-	return atomic.LoadUint64(&bfsNodeExplored)
-}
-func ResetBFSNodeExplored() {
-	atomic.StoreUint64(&bfsNodeExplored, 0)
-}
-
-/**
- *  BFSParallel runs a bottom-up DP with per-tier concurrency,
- *  building up to maxPaths example sub-trees per element,
- *  then returns up to maxPaths for targetName.
- */
-func BFS(recipeMap map[string]scraper.ElementData, targetName string, maxPaths int) ([]*Element, error) {
-	ResetBFSNodeExplored()
-
-	// 1) bucket names by tier
-	byTier := make(map[int][]string, len(recipeMap))
-	var tiers []int
-	for name, data := range recipeMap {
-		t := data.Tier
-		if _, ok := byTier[t]; !ok {
-			tiers = append(tiers, t)
-		}
-		byTier[t] = append(byTier[t], name)
-	}
-	sort.Ints(tiers)
-
-	// 2) memo holds up to maxPaths examples per element
-	memo := make(map[string][]*Element, len(recipeMap))
-
-	// 3) seed tier 0
-	for _, name := range byTier[0] {
-		memo[name] = []*Element{{Name: name, Tier: 0}}
-		atomic.AddUint64(&bfsNodeExplored, 1)
-	}
-
-	// 4) process higher tiers in parallel per element
-	for _, tier := range tiers {
-		if tier == 0 {
-			continue
-		}
-		nextMemo := make(map[string][]*Element, len(byTier[tier]))
-		var wg sync.WaitGroup
-		var mu sync.Mutex
-		sem := make(chan struct{}, runtime.NumCPU())
-
-		for _, name := range byTier[tier] {
-			wg.Add(1)
-			sem <- struct{}{}
-			go func(el string) {
-				defer wg.Done()
-				defer func() { <-sem }()
-
-				atomic.AddUint64(&bfsNodeExplored, 1)
-				data := recipeMap[el]
-				var examples []*Element
-
-				for _, pair := range data.Recipes {
-					leftList, lok := memo[pair[0]]
-					rightList, rok := memo[pair[1]]
-					if !lok || !rok || len(leftList) == 0 || len(rightList) == 0 {
-						continue
-					}
-					for _, L := range leftList {
-						for _, R := range rightList {
-							if len(examples) >= maxPaths {
-								break
-							}
-							if data.Tier <= L.Tier || data.Tier <= R.Tier {
-								continue
-							}
-							atomic.AddUint64(&bfsNodeExplored, 1)
-							examples = append(examples, &Element{
-								Name:    el,
-								Tier:    data.Tier,
-								Recipes: []Recipe{{Left: L, Right: R}},
-							})
-						}
-						if len(examples) >= maxPaths {
-							break
-						}
-					}
-					if len(examples) >= maxPaths {
-						break
-					}
-				}
-
-				mu.Lock()
-				nextMemo[el] = examples
-				mu.Unlock()
-			}(name)
-		}
-
-		wg.Wait()
-
-		// merge this tier into memo
-		for name, ex := range nextMemo {
-			memo[name] = ex
-		}
-	}
-
-	// 5) return up to maxPaths for target
-	result, ok := memo[targetName]
-	if !ok || len(result) == 0 {
-		return nil, nil
-	}
-	if len(result) > maxPaths {
-		result = result[:maxPaths]
-	}
-	return result, nil
+func BFS(
+    recipeMap map[string]scraper.ElementData, 
+    targetName string, 
+    maxPaths int,
+) ([]*Element, uint64, error) {
+    var nodeCounter uint64 = 0
+    
+    // Group elements by tier
+    byTier := make(map[int][]string, len(recipeMap))
+    var tiers []int
+    for name, data := range recipeMap {
+        t := data.Tier
+        if _, ok := byTier[t]; !ok {
+            tiers = append(tiers, t)
+        }
+        
+        // Cap elements per tier
+        if len(byTier[t]) < MAX_ELEMENTS_PER_TIER {
+            byTier[t] = append(byTier[t], name)
+        }
+    }
+    sort.Ints(tiers)
+    
+    memo := make(map[string][]*Element, len(recipeMap))
+    
+    // Initialize tier 0 elements
+    for _, name := range byTier[0] {
+        memo[name] = []*Element{{Name: name, Tier: 0}}
+        atomic.AddUint64(&nodeCounter, 1)
+    }
+    
+    // Process higher tiers
+    for _, tier := range tiers {
+        if tier == 0 {
+            continue
+        }
+        
+        nextMemo := make(map[string][]*Element, len(byTier[tier]))
+        var wg sync.WaitGroup
+        var mu sync.Mutex
+        sem := make(chan struct{}, MAX_GOROUTINES)  // Use constant for goroutine limit
+        
+        for _, name := range byTier[tier] {
+            wg.Add(1)
+            sem <- struct{}{}
+            
+            go func(el string) {
+                defer wg.Done()
+                defer func() { <-sem }()
+                
+                atomic.AddUint64(&nodeCounter, 1)
+                data := recipeMap[el]
+                var examples []*Element
+                
+                // Cap number of recipes to process
+                recipesToProcess := data.Recipes
+                if len(recipesToProcess) > MAX_RECIPES_PER_ELEMENT {
+                    recipesToProcess = recipesToProcess[:MAX_RECIPES_PER_ELEMENT]
+                }
+                
+                for _, pair := range recipesToProcess {
+                    leftList, lok := memo[pair[0]]
+                    rightList, rok := memo[pair[1]]
+                    if !lok || !rok || len(leftList) == 0 || len(rightList) == 0 {
+                        continue
+                    }
+                    
+                    // Cap the number of left and right elements to consider
+                    leftCapped := leftList
+                    if len(leftList) > MAX_LEFT_COMBINATIONS {
+                        leftCapped = leftList[:MAX_LEFT_COMBINATIONS]
+                    }
+                    
+                    rightCapped := rightList
+                    if len(rightList) > MAX_RIGHT_COMBINATIONS {
+                        rightCapped = rightList[:MAX_RIGHT_COMBINATIONS]
+                    }
+                    
+                    for _, L := range leftCapped {
+                        for _, R := range rightCapped {
+                            if len(examples) >= maxPaths {
+                                break
+                            }
+                            
+                            if data.Tier <= L.Tier || data.Tier <= R.Tier {
+                                continue
+                            }
+                            
+                            atomic.AddUint64(&nodeCounter, 1)
+                            examples = append(examples, &Element{
+                                Name:    el,
+                                Tier:    data.Tier,
+                                Recipes: []Recipe{{Left: L, Right: R}},
+                            })
+                        }
+                        
+                        if len(examples) >= maxPaths {
+                            break
+                        }
+                    }
+                    
+                    if len(examples) >= maxPaths {
+                        break
+                    }
+                }
+                
+                // Cap the number of examples to store
+                if len(examples) > maxPaths {
+                    examples = examples[:maxPaths]
+                }
+                
+                if len(examples) > 0 {
+                    mu.Lock()
+                    nextMemo[el] = examples
+                    mu.Unlock()
+                }
+            }(name)
+        }
+        
+        wg.Wait()
+        
+        // Merge this tier into memo
+        for name, ex := range nextMemo {
+            memo[name] = ex
+        }
+        
+        // Clear memory after processing each tier
+        for k := range memo {
+            // Keep only elements needed for next tier and the target
+            if k != targetName {
+                keepElement := false
+                for _, name := range byTier[tier+1] {
+                    for _, pair := range recipeMap[name].Recipes {
+                        if pair[0] == k || pair[1] == k {
+                            keepElement = true
+                            break
+                        }
+                    }
+                    if keepElement {
+                        break
+                    }
+                }
+                
+                if !keepElement {
+                    delete(memo, k)
+                }
+            }
+        }
+        
+        // Explicitly trigger garbage collection after each tier
+        runtime.GC()
+    }
+    
+    // Return up to maxPaths for target
+    result, ok := memo[targetName]
+    if !ok || len(result) == 0 {
+        return nil, nodeCounter, nil
+    }
+    
+    if len(result) > maxPaths {
+        result = result[:maxPaths]
+    }
+    
+    return result, nodeCounter, nil
 }
 
 /**
@@ -135,7 +195,6 @@ func CreateFullTree(
 	name string,
     nextID func() uint64,
 ) *Target {
-    // 1) Build the root placeholder (ID=0 for now)
     tgt := &Target{
         Name:        name,
         Tier:        0,
@@ -148,7 +207,7 @@ func CreateFullTree(
         tgt.Tier = paths[0].Tier
     }
 
-    // 2) Clone everything with ID=0 (we'll assign real IDs in BFS)
+    // Clone everything with ID=0 (we'll assign real IDs in BFS)
     var clone func(src *Element) *Element
     clone = func(src *Element) *Element {
         node := &Element{
@@ -165,7 +224,7 @@ func CreateFullTree(
         return node
     }
 
-    // 3) Merge top-level recipes by signature "Left|Right"
+    // Merge top-level recipes by signature "Left|Right"
     seen := make(map[string]int) // sig -> index in tgt.Recipes
     for _, p := range paths {
         rootClone := clone(p)
@@ -181,8 +240,7 @@ func CreateFullTree(
         }
     }
 
-    // 4) Now do BFS, assigning IDs in order and emitting updates
-    // Assign root its ID
+    // BFS, assigning IDs in order and emitting updates
     tgt.ID = nextID()
     if updates != nil {
         updates <- Update{
@@ -201,9 +259,7 @@ func CreateFullTree(
 
     queue := []item{}
 
-    // Enqueue top-level children, assigning their IDs immediately
     for i, rec := range tgt.Recipes {
-        // left child
         rec.Left.ID = nextID()
         rec.Right.ID = nextID()
 
@@ -225,11 +281,9 @@ func CreateFullTree(
         queue = append(queue, item{ParentID: rec.Right.ID, RecipeIndex: i, Node: rec.Right})
     }
 
-    // Process the rest of the BFS
     for head := 0; head < len(queue); head++ {
         cur := queue[head]
         for ci, childRec := range cur.Node.Recipes {
-            // Assign IDs just before emitting
             childRec.Left.ID = nextID()
             childRec.Right.ID = nextID()
 

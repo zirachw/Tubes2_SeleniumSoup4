@@ -4,6 +4,7 @@ import { Sidebar, TreeViewer, StatsPanel } from "@/components";
 import { ElementsData } from "@/types";
 import toast from "react-hot-toast";
 import { Toast } from "react-hot-toast";
+import { unique } from "next/dist/build/utils";
 
 // im kinda lazy to move these interface to /types
 interface QueryParams {
@@ -16,6 +17,8 @@ interface QueryParams {
 
 interface StatsPanelProps {
   nodesExplored: number;
+  nodesInTree: number;
+  uniquePaths: number;
   timeTaken: string;
   /*  optional extra classes if i need to tweak positioning */
   className?: string;
@@ -35,6 +38,8 @@ const Page: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [stats, setStats] = useState<StatsPanelProps>({
     nodesExplored: -1,
+    nodesInTree: -1,
+    uniquePaths: -1,
     timeTaken: "-",
   });
 
@@ -97,6 +102,8 @@ const Page: React.FC = () => {
     setIsProcessing(true);
     setStats({
       nodesExplored: -1,
+      nodesInTree: -1,
+      uniquePaths: -1,
       timeTaken: "-",
     });
     if (params.liveUpdate) {
@@ -198,6 +205,8 @@ const Page: React.FC = () => {
       {/* Stats Panel */}
       <StatsPanel
         nodesExplored={stats.nodesExplored}
+        nodesInTree={stats.nodesInTree}
+        uniquePaths={stats.uniquePaths}
         timeTaken={stats.timeTaken}
       />
     </div>
