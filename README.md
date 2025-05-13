@@ -53,7 +53,48 @@
 [React-url]: https://react.dev/
 [Go-url]: https://go.dev/
 
+## 🔎 Preview
+![2025-05-1321-43-54-ezgif com-video-to-gif-converter](https://github.com/user-attachments/assets/54bca0aa-f8a6-484e-996c-056c4c4acb01)
 
+---
+
+## ✨ Features
+
+### This project contains:
+
+1. **Search element name**
+2. **Single/Multiple recipes option**
+3. **Responsive website**
+4. **`(Bonus)` Recipe search live update**
+5. **`(Bonus)` *containerized* project & deployment**
+
+### **Space for Improvement:** 
+
+1. **`(Bonus)` Bidirectional search**
+
+--- 
+## Algorithm Explanation
+### BFS
+1. Group all elements into buckets based on their tier values.
+
+2. Initialize memo with tier 0 elements. Add each base element as a single node and mark it as traced.
+
+3. For each element in a given tier, try to form a new path from that element and the elements in memo. If the combination is valid and the number of paths does not exceed maxPath, add the path to the memo.
+
+4. Once all tiers are complete, check if the target element is available in memo. If yes, retrieve the paths that leads to that target.
+
+5. Make the target node the root of the tree.
+
+6. Insert as many element paths into the tree as required.
+
+### DFS
+1. Verify the existence of the target element in the data set. If the element is not found, the process is stopped. If found, a root node is created as the initial representation of the solution structure.
+    
+2. Base case: If the target element is in tier 0, the recipe search is complete, as it is a base element.
+    
+3. Recursion: Count the number of unique paths of all possible component pairs. Then, find recipes for both elements from as many recipe pairs as the desired number of recipes with DFS.
+    
+4. Merge all valid subtrees into the root node.
 ---
 
 ## ️Running Locally
@@ -89,4 +130,23 @@ Then:
    ```
    > Opens at http://localhost:3000, API proxy to http://localhost:8080
 
----
+ ---
+ ## 📃 Miscellaneous
+
+ <div align="center">
+   
+ | No | Points | Ya | Tidak |
+ | --- | --- | --- | --- |
+ | 1 | Aplikasi dapat dijalankan. | ✔️ | |
+ | 2 | Aplikasi dapat memperoleh data *recipe* melalui scraping. | ✔️ | |
+ | 3 | Algoritma **Depth First Search** dan **Breadth First Search** dapat menemukan *recipe* elemen dengan benar. | ✔️ | |
+ | 4 | Aplikasi dapat menampilkan visualisasi *recipe* elemen yang dicari sesuai dengan spesifikasi.| ✔️ | |
+ | 5 | Aplikasi mengimplementasikan multithreading. | ✔️ | |
+ | 6 | Membuat laporan sesuai dengan spesifikasi. | ✔️ | |
+ | 7 | Membuat bonus video dan diunggah pada Youtube. | ✔️ | |
+ | 6 | **[Bonus]** Membuat algoritma pencarian *Bidirectional*. |  | ✔️|
+ | 7 | **[Bonus]** Membuat *Live Update* | ✔️ | |
+ | 8 | **[Bonus]** Aplikasi di-*containerize* dengan Docker. | ✔️ | |
+ | 8 | **[Bonus]** Aplikasi di-*deploy* dan dapat diakses melalui internet. | ✔️ | |
+
+ </div>
