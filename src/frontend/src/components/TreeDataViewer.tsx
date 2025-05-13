@@ -184,8 +184,8 @@ const TreeDataViewer: React.FC<TreeDataViewerProps> = ({
       isLeftBranch: boolean
     ) {
       const id = makeId();
-      const leftLabel = left.value;
-      const rightLabel = right.value;
+      const LeftLabel = left.value;
+      const RightLabel = right.value;
       const leftImageLink = elementsData[left.value]?.imageLink || "";
       const rightImageLink = elementsData[right.value]?.imageLink || "";
 
@@ -194,8 +194,10 @@ const TreeDataViewer: React.FC<TreeDataViewerProps> = ({
         id,
         type: "couple",
         data: {
-          leftLabel,
-          rightLabel,
+          LeftLabel,
+          RightLabel,
+          LeftID: `left-child-${id}`,
+          RightID: `right-child-${id}`,
           leftImageLink,
           rightImageLink,
           id,
@@ -417,8 +419,8 @@ const TreeDataViewer: React.FC<TreeDataViewerProps> = ({
     const randomKey = keys[randomIndex];
     const parentId = nodes[Math.floor(Math.random() * nodes.length)].id;
     const id = `couple_${nodeCountRef.current++}`;
-    const leftLabel = elementsData![randomKey].recipes[0][0];
-    const rightLabel = elementsData![randomKey].recipes[0][1];
+    const LeftLabel = elementsData![randomKey].recipes[0][0];
+    const RightLabel = elementsData![randomKey].recipes[0][1];
     const leftImageLink =
       elementsData![elementsData![randomKey].recipes[0][0]].imageLink;
     const rightImageLink =
@@ -432,8 +434,10 @@ const TreeDataViewer: React.FC<TreeDataViewerProps> = ({
       id,
       type: "couple",
       data: {
-        leftLabel,
-        rightLabel,
+        LeftLabel,
+        RightLabel,
+        LeftID : `left-child-${id}`,
+        RightID: `right-child-${id}`,
         leftImageLink,
         rightImageLink,
         id,

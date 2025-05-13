@@ -5,14 +5,24 @@ import { ElementsData } from "@/types";
 
 interface SidebarProps {
   isOpen: boolean;
+  isProcessing: boolean;
   onToggle: () => void;
+  onQueryParamsChange: (params: {
+    element: string | null;
+    algorithm: string | null;
+    multipleRecipes: boolean;
+    liveUpdate: boolean;
+    count: number | "all";
+  }) => void;
   elementsData: ElementsData;
   loading: boolean;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
   isOpen,
+  isProcessing,
   onToggle,
+  onQueryParamsChange,
   elementsData,
   loading,
 }) => {
@@ -112,8 +122,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   // Handle find button click
   const handleFindClick = () => {
-    // This function would trigger the search logic
-    console.log("Finding recipes with:", {
+    onQueryParamsChange({
       element: selectedElement,
       algorithm: selectedAlgorithm,
       multipleRecipes: isMultipleRecipeMode,
@@ -319,15 +328,16 @@ const Sidebar: React.FC<SidebarProps> = ({
           {/* Find Button */}
           <div className="p-4">
             <button
-              className={`w-full p-2 rounded ${
-                selectedAlgorithm
+              className={`w-full p-2 rounded flex items-center justify-center transition-colors ${
+                selectedAlgorithm && !isProcessing
                   ? "bg-[#DBDBDB] hover:bg-gray-300 text-black"
                   : "bg-[#505050] text-[#DBDBDB] opacity-70"
-              } transition-colors`}
+              }`}
               onClick={handleFindClick}
-              disabled={!selectedAlgorithm}
+              disabled={!selectedAlgorithm || isProcessing}
             >
-              Find !
+              <span>{isProcessing ? "Finding..." : "Find!"}</span>
+              {isProcessing && <div className="loading ml-2"></div>}
             </button>
           </div>
         </div>

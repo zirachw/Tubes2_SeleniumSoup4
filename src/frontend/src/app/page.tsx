@@ -3,13 +3,32 @@ import React, { useState, useEffect } from "react";
 import { Sidebar, TreeViewer } from "@/components";
 import { ElementsData } from "@/types";
 
+interface QueryParams {
+    element: string | null;
+    algorithm: string | null;
+    multipleRecipes: boolean;
+    liveUpdate: boolean;
+    count: number | "all";
+  }
+
+
 const Page: React.FC = () => {
   // State for sidebar
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+
   // State for elements data
   const [elementsData, setElementsData] = useState<ElementsData>({});
   const [loading, setLoading] = useState(true);
+  const [queryParams, setQueryParams] = useState<QueryParams>({
+    element: "",
+    algorithm: "",
+    multipleRecipes: false,
+    liveUpdate: false,
+    count: 0,
+  });
+  const [shouldSendRequest, setShouldSendRequest] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Fetch elements data on component mount
   useEffect(() => {
@@ -48,10 +67,24 @@ const Page: React.FC = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
+  const handleQueryParamsChange = (params: QueryParams) => {
+    setQueryParams(params);
+    setShouldSendRequest(true);
+    console.log("Query Params Updated:", params);
+    setIsProcessing(true);
+    setSidebarOpen(false);
+  };
+
+  const handleFinishProcess = () => {
+    setShouldSendRequest(false);
+    setIsProcessing(false);
+  }
+
   return (
     <div className="flex min-h-screen bg-white">
       {/* Main content */}
-      <TreeViewer elementsData={elementsData} loading={loading} />
+      
+      <TreeViewer elementsData={elementsData} loading={loading} queryParams={queryParams} trigger={shouldSendRequest} onFinish={handleFinishProcess} />
 
       {/* Sidebar Toggle Button - visible when sidebar is closed */}
       {!sidebarOpen && (
@@ -68,7 +101,9 @@ const Page: React.FC = () => {
       {/* Sidebar Component */}
       <Sidebar
         isOpen={sidebarOpen}
+        isProcessing={isProcessing}
         onToggle={toggleSidebar}
+        onQueryParamsChange={handleQueryParamsChange}
         elementsData={elementsData}
         loading={loading}
       />

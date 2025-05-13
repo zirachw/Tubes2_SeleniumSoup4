@@ -5,11 +5,13 @@ import { Handle, Position } from "reactflow";
 import Image from "next/image";
 import { getElementBackgroundColor } from "@/utils/getElementBackgroundColor";
 interface CoupleData {
-  leftLabel: string;
-  rightLabel: string;
+  LeftLabel: string;
+  RightLabel: string;
   leftImageLink: string;
   rightImageLink: string;
   id: string;
+  RightID: number;
+  LeftID: number;
 }
 export const BOX_WIDTH = 96;
 export const BOX_HEIGHT = 48;
@@ -71,20 +73,20 @@ export default function CoupleNode({ data }: { data: CoupleData }) {
 
       {/* mom box + its child handle */}
       <div style={{ position: "relative", marginRight: GAP / 2 }}>
-        <div style={getBoxStyle(data.leftLabel)} title={data.leftLabel}>
+        <div style={getBoxStyle(data.LeftLabel)} title={data.LeftLabel}>
           <Image
             src={data.leftImageLink}
-            alt={data.leftLabel}
+            alt={data.LeftLabel}
             width={30}
             height={30}
             crossOrigin="anonymous"
             style={imageStyle}
           ></Image>
-          <span style={labelStyle}>{data.leftLabel}</span>
+          <span style={labelStyle}>{data.LeftLabel}</span>
         </div>
         <Handle
           type="source"
-          id={`left-child-${data.id}`}
+          id={`${data.LeftID}`}
           position={Position.Bottom}
           style={{ left: BOX_WIDTH / 2 }}
         />
@@ -104,20 +106,20 @@ export default function CoupleNode({ data }: { data: CoupleData }) {
 
       {/* dad box + its child handle */}
       <div style={{ position: "relative", marginLeft: GAP / 2 }}>
-        <div style={getBoxStyle(data.rightLabel)} title={data.rightLabel}>
+        <div style={getBoxStyle(data.RightLabel)} title={data.RightLabel}>
           <Image
             src={data.rightImageLink}
-            alt={data.rightLabel}
+            alt={data.RightLabel}
             width={30}
             height={30}
             crossOrigin="anonymous"
             style={imageStyle}
           ></Image>
-          <span style={labelStyle}>{data.rightLabel}</span>
+          <span style={labelStyle}>{data.RightLabel}</span>
         </div>
         <Handle
           type="source"
-          id={`right-child-${data.id}`}
+          id={`${data.RightID}`}
           position={Position.Bottom}
           style={{ left: BOX_WIDTH / 2 }}
         />
