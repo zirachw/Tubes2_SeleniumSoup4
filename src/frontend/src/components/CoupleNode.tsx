@@ -1,5 +1,5 @@
 "use client";
-// components/CoupleNode.tsx
+
 import React from "react";
 import { Handle, Position } from "reactflow";
 import Image from "next/image";

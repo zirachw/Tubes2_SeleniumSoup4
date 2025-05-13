@@ -24,7 +24,6 @@ import "reactflow/dist/style.css";
 import { CoupleNode, SingleNode } from "@/components";
 import { ElementsData } from "@/types";
 import { BOX_HEIGHT, BOX_WIDTH, GAP, PADDING } from "./CoupleNode";
-import { on } from "events";
 
 const edgeColorDefault = "#b1b1b7";
 const edgeColorHighlight = "#4ade80";
@@ -61,7 +60,7 @@ const minimapNodeColor = (node: Node) => {
     case "couple":
       return "#d1d1d1";
     default:
-      // greyish more white than coupe
+      // greyish more white than couple
       return "#f0f0f0";
   }
 };
@@ -348,7 +347,6 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
 
     hasStartedRef.current = true;
 
-    // 1) open SSE
     const query = new URLSearchParams(
       Object.entries(queryParams).reduce((acc, [key, value]) => {
         if (value !== null) {
@@ -467,7 +465,6 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
 
     scheduleNext();
 
-    // 3) cleanup
     return () => {
       es.close();
     };
@@ -492,7 +489,6 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
         const leftImageLink = elementsData[left.name]?.imageLink || "";
         const rightImageLink = elementsData[right.name]?.imageLink || "";
 
-        // 1) add the couple‐node itself
         newNodes.push({
           id,
           type: "couple",
@@ -515,7 +511,6 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
           height: BOX_HEIGHT + PADDING * 2,
         });
 
-        // 2) if we have a parent, wire up an edge into this node
         if (parentId) {
           const sourceHandle = isLeftBranch
             ? `left-child-${parentId}`
@@ -541,9 +536,7 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
           });
         }
 
-        // 3) if this JSON pair itself has deeper children, recurse
         if (Array.isArray(left.recipes) && left.recipes.length) {
-          // our shape is { children: [ { left: {...}, right: {...} }, ... ] }
           left.recipes.forEach((pair: any) =>
             walkPair(pair.left, pair.right, id, true)
           );
@@ -556,8 +549,6 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
       }
 
       nodeCountRef.current = 0;
-
-      // 1️⃣ first handle the very top: JSON root has .value + .children[0]
 
       if (treeData?.recipeTree) {
         const rootId = `node-1`;
@@ -613,7 +604,6 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
 
     hasStartedRef.current = true;
 
-    // 1) open SSE
     const query = new URLSearchParams(
       Object.entries(queryParams).reduce((acc, [key, value]) => {
         if (value !== null) {
@@ -649,7 +639,6 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
       es.close();
     };
 
-    // 3) cleanup
     return () => {
       es.close();
     };
