@@ -90,13 +90,13 @@ Then:
    > Opens at http://localhost:3000, API proxy to http://localhost:8080
 ## Algorithm Explanation
 ### BFS
-1. Group all elements into \textit{bucket} based on their tier values.
+1. Group all elements into buckets based on their tier values.
 
-2. Initialize \texttt{memo} with tier 0 elements. Add each base element as a single node and mark it as traced.
+2. Initialize memo with tier 0 elements. Add each base element as a single node and mark it as traced.
 
-3. For each element in a given tier, try to form a new path from that element and the elements in \texttt{memo}. If the combination is valid and the number of paths does not exceed \texttt{maxPaths}, add the path to the memo.
+3. For each element in a given tier, try to form a new path from that element and the elements in memo. If the combination is valid and the number of paths does not exceed maxPath, add the path to the memo.
 
-4. Once all tiers are complete, check if the target element is available in \texttt{memo}. If yes, retrieve the \texttt{maxPaths} path that leads to that target.
+4. Once all tiers are complete, check if the target element is available in memo. If yes, retrieve the paths that leads to that target.
 
 5. Make the target node the root of the tree.
 
