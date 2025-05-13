@@ -1,8 +1,10 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Sidebar, TreeViewer } from "@/components";
+import { Sidebar, TreeViewer, StatsPanel } from "@/components";
 import { ElementsData } from "@/types";
+import toast from "react-hot-toast";
 
+// im kinda lazy to move these interface to /types
 interface QueryParams {
     element: string | null;
     algorithm: string | null;
@@ -11,10 +13,31 @@ interface QueryParams {
     count: number | "all";
   }
 
+interface StatsPanelProps {
+  nodesExplored: number;
+  timeTaken: string;
+  /*  optional extra classes if i need to tweak positioning */
+  className?: string;
+}
+
+const loadingMessages = [
+  "Cooking recipes 🔥",
+  "Mixing elements ⚗️",
+  "Brewing formula 🧪",
+  "Sifting powders",
+  "Charting paths 🗺️",
+  "Finding routes 🧭",
+];
 
 const Page: React.FC = () => {
   // State for sidebar
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [stats, setStats] = useState<StatsPanelProps>({
+    nodesExplored:  -1,
+    timeTaken: "-",
+  });
+
+  const [mainToast, setMainToast] = useState<string | undefined>();
 
 
   // State for elements data
@@ -72,19 +95,38 @@ const Page: React.FC = () => {
     setShouldSendRequest(true);
     console.log("Query Params Updated:", params);
     setIsProcessing(true);
+    setStats({
+      nodesExplored: -1,
+      timeTaken: "-",
+    });
+    if(params.liveUpdate){
+    const randomMsg =
+      loadingMessages[Math.floor(Math.random() * loadingMessages.length)];
+    setMainToast(toast.loading(randomMsg));
+    }
     setSidebarOpen(false);
   };
 
-  const handleFinishProcess = () => {
+  const handleFinishProcess = (stats : StatsPanelProps) => {
     setShouldSendRequest(false);
     setIsProcessing(false);
+    setStats(stats);
+    toast.success("Process Finished", { id: mainToast });
+    console.log("Process Finished:");
+  }
+
+  const handleErrorProcess = (error: string) => {
+    setShouldSendRequest(false);
+    setIsProcessing(false);
+    toast.error("Process Failed: " + error, { id: mainToast });
+    console.log("Process Failed:", error);
   }
 
   return (
-    <div className="flex min-h-screen bg-white">
+    <div className="flex min-h-screen bg-white relative">
       {/* Main content */}
       
-      <TreeViewer elementsData={elementsData} loading={loading} queryParams={queryParams} trigger={shouldSendRequest} onFinish={handleFinishProcess} />
+      <TreeViewer elementsData={elementsData} loading={loading} queryParams={queryParams} trigger={shouldSendRequest} onFinish={handleFinishProcess} onError={handleErrorProcess}/>
 
       {/* Sidebar Toggle Button - visible when sidebar is closed */}
       {!sidebarOpen && (
@@ -107,6 +149,13 @@ const Page: React.FC = () => {
         elementsData={elementsData}
         loading={loading}
       />
+
+      {/* Stats Panel */}
+      <StatsPanel
+        nodesExplored={stats.nodesExplored}
+        timeTaken={stats.timeTaken}
+      />
+        
     </div>
   );
 };

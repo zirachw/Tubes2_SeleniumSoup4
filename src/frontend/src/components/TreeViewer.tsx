@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
+import { flushSync } from "react-dom";
 import ELK from "elkjs/lib/elk.bundled.js";
 import ReactFlow, {
   ReactFlowProvider,
@@ -23,6 +24,7 @@ import "reactflow/dist/style.css";
 import { CoupleNode, SingleNode } from "@/components";
 import { ElementsData } from "@/types";
 import { BOX_HEIGHT, BOX_WIDTH, GAP, PADDING } from "./CoupleNode";
+import { on } from "events";
 
 const edgeColorDefault = "#b1b1b7";
 const edgeColorHighlight = "#4ade80";
@@ -44,6 +46,25 @@ interface Update {
   RightLabel: string;
 }
 
+interface StatsPanelProps {
+  nodesExplored: number;
+  timeTaken: string;
+  /*  optional extra classes if i need to tweak positioning */
+  className?: string;
+}
+
+// hhihi
+const minimapNodeColor = (node : Node) => {
+  switch (node.type) {
+    case 'single':
+      return '#ff0072';
+    case 'couple':
+      return '#d1d1d1';
+    default:
+      // greyish more white than coupe
+      return '#f0f0f0';
+  }
+};
 const getLayoutedElements = async (
   nodes: Node[],
   edges: Edge[],
@@ -51,7 +72,10 @@ const getLayoutedElements = async (
 ) => {
   const rightSideNodes = new Set<string>();
   edges.forEach((edge) => {
-    if (parseInt(edge.sourceHandle ?? "") % 2 === 0) {
+    if (
+      parseInt(edge.sourceHandle ?? "") % 2 === 0 ||
+      edge.sourceHandle?.startsWith("right-")
+    ) {
       // assume even handles are on the left lol
       rightSideNodes.add(edge.target);
     }
@@ -178,7 +202,8 @@ interface TreeViewerProps {
   loading: boolean;
   queryParams: QueryParams;
   trigger: boolean;
-  onFinish: () => void;
+  onFinish: (stats: StatsPanelProps) => void;
+  onError: (error: string) => void;
 }
 
 const TreeViewer: React.FC<TreeViewerProps> = ({
@@ -187,9 +212,11 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
   queryParams,
   trigger,
   onFinish,
+  onError,
 }) => {
   const [nodes, setNodes] = useState<Node[]>([]);
   const queueRef = useRef<Update[]>([]);
+  const resultRef = useRef<any | null>(null);
   const evtSourceRef = useRef<EventSource | null>(null);
   const [edges, setEdges] = useState<Edge[]>([]);
   const hasStartedRef = useRef(false);
@@ -311,6 +338,7 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
     },
     [elementsData, layoutFlow]
   );
+
   const liveUpdate = useCallback(() => {
     if (loading || hasStartedRef.current) {
       console.log("Already started live update or loading");
@@ -329,16 +357,26 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
       }, {} as Record<string, string>)
     ).toString();
 
-
-    
     const es = new EventSource(`http://localhost:8080/stream?${query}`);
     evtSourceRef.current = es;
     es.onmessage = (e) => {
       try {
-        const updates: Update[] = JSON.parse(e.data);
-        queueRef.current.push(...updates);
+        const temp: any = JSON.parse(e.data);
+        if (temp.hasOwnProperty("recipeTree")) {
+          resultRef.current = temp;
+        } else {
+          const updates: Update[] = temp;
+          queueRef.current.push(...updates);
+        }
       } catch (err) {
         console.error("Failed to parse SSE data", err);
+        onError("Failed to parse SSE data");
+        hasStartedRef.current = false;
+        if (evtSourceRef.current) {
+          evtSourceRef.current.close();
+          evtSourceRef.current = null;
+        }
+        return;
       }
     };
     es.onerror = () => {
@@ -350,10 +388,12 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
     const timeoutRef = { current: 0 as number };
 
     function scheduleNext() {
-      const start = performance.now();
       if (queueRef.current.length) {
         let next = queueRef.current.shift()!;
-        if ((next.Stage === "startDFS" || next.Stage === "startBFS") && !hasRoot.current) {
+        if (
+          (next.Stage === "startDFS" || next.Stage === "startBFS") &&
+          !hasRoot.current
+        ) {
           hasRoot.current = true;
           const newNodes = [
             {
@@ -384,7 +424,17 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
               // we are done
               console.log("Done with recipe");
               hasStartedRef.current = false;
-              onFinish();
+              if (
+                resultRef.current &&
+                resultRef.current.hasOwnProperty("recipeTree")
+              ) {
+                onFinish({
+                  nodesExplored: resultRef.current.nodesExplored,
+                  timeTaken: resultRef.current.timeTaken,
+                });
+              } else {
+              onFinish({ nodesExplored: -1, timeTaken: "Result not found" });
+              }
               if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
                 timeoutRef.current = 0;
@@ -408,11 +458,10 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
           }
         }
       }
-      const elapsed = performance.now() - start;
       timeoutRef.current = window.setTimeout(
         scheduleNext,
         // ms
-        Math.max(0, 800 - elapsed)
+         800
       );
     }
 
@@ -438,6 +487,188 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
     };
   }, [loading, addNode, queryParams]);
 
+  const buildGraph = useCallback(
+    (treeData: any) => {
+      console.log("Building graph from treeData", treeData);
+      hasStartedRef.current = true;
+      const newNodes: Node[] = [];
+      const newEdges: Edge[] = [];
+
+      function walkPair(
+        left: any,
+        right: any,
+        parentId: string | null,
+        isLeftBranch: boolean
+      ) {
+        const id = makeId();
+        const LeftLabel = left.name;
+        const RightLabel = right.name;
+        const leftImageLink = elementsData[left.name]?.imageLink || "";
+        const rightImageLink = elementsData[right.name]?.imageLink || "";
+
+        // 1) add the couple‐node itself
+        newNodes.push({
+          id,
+          type: "couple",
+          data: {
+            LeftLabel,
+            RightLabel,
+            LeftID: `left-child-${id}`,
+            RightID: `right-child-${id}`,
+            leftImageLink,
+            rightImageLink,
+            id,
+            targetHandles: [{ id: `parent-${id}` }],
+            sourceHandles: [
+              { id: `left-child-${id}` },
+              { id: `right-child-${id}` },
+            ],
+          },
+          position: { x: 0, y: 0 },
+          width: BOX_WIDTH * 2 + GAP + PADDING * 5,
+          height: BOX_HEIGHT + PADDING * 2,
+        });
+
+        // 2) if we have a parent, wire up an edge into this node
+        if (parentId) {
+          const sourceHandle = isLeftBranch
+            ? `left-child-${parentId}`
+            : `right-child-${parentId}`;
+
+          // handle source if parent is root
+          const sourceHandleRoot = isLeftBranch ? "parent-root" : "parent-root";
+          const sourceHandleParent =
+            parentId === "node-1" ? sourceHandleRoot : sourceHandle;
+          newEdges.push({
+            id: `e-${parentId}-${id}`,
+            source: parentId,
+            sourceHandle: sourceHandleParent,
+            target: id,
+            targetHandle: `parent-${id}`,
+            type: "smoothstep",
+            markerStart: {
+              type: MarkerType.ArrowClosed,
+              width: 8,
+              height: 8,
+            },
+            style: { strokeWidth: 2 },
+          });
+        }
+
+        // 3) if this JSON pair itself has deeper children, recurse
+        if (Array.isArray(left.recipes) && left.recipes.length) {
+          // our shape is { children: [ { left: {...}, right: {...} }, ... ] }
+          left.recipes.forEach((pair: any) =>
+            walkPair(pair.left, pair.right, id, true)
+          );
+        }
+        if (Array.isArray(right.recipes) && right.recipes.length) {
+          right.recipes.forEach((pair: any) =>
+            walkPair(pair.left, pair.right, id, false)
+          );
+        }
+      }
+
+      nodeCountRef.current = 0;
+
+      // 1️⃣ first handle the very top: JSON root has .value + .children[0]
+
+      if (treeData?.recipeTree) {
+        const rootId = `node-1`;
+        // create a dummy “root” node so we can wire into the first couple
+        newNodes.push({
+          id: "node-1",
+          type: "single",
+          data: {
+            label: treeData.element,
+            imageLink: elementsData[treeData.element]?.imageLink || "",
+            targetHandles: [],
+            sourceHandles: [{ id: `parent-root` }],
+          },
+          // set position to center
+          position: { x: 0, y: 0 },
+          width: 128 + 2 * PADDING, // hell yeah @ref SingleNode.tsx
+          height: BOX_HEIGHT,
+        });
+
+        // now hook up the first real couple(s)
+        if (treeData.recipeTree.Recipes) {
+          treeData.recipeTree.Recipes.forEach((pair: any) => {
+            walkPair(pair.left, pair.right, rootId, true);
+          });
+        }
+      }
+
+      console.log("Done with recipe");
+      hasStartedRef.current = false;
+      // malas validate
+      onFinish({
+        nodesExplored: treeData.nodesExplored,
+        timeTaken: treeData.timeTaken,
+      });
+
+      flushSync(() => {
+        setNodes(newNodes);
+        setEdges(newEdges);
+      });
+      layoutFlow("DOWN", newNodes, newEdges);
+      if (rfInstance) {
+        rfInstance.fitView({ padding: 0.2, duration: 400 });
+      }
+    },
+    [elementsData, rfInstance]
+  );
+
+  const directTree = useCallback(() => {
+    if (loading || hasStartedRef.current) {
+      console.log("Already started live update or loading");
+      return;
+    }
+
+    hasStartedRef.current = true;
+
+    // 1) open SSE
+    const query = new URLSearchParams(
+      Object.entries(queryParams).reduce((acc, [key, value]) => {
+        if (value !== null) {
+          acc[key] = value.toString();
+        }
+        return acc;
+      }, {} as Record<string, string>)
+    ).toString();
+
+    const es = new EventSource(`http://localhost:8080/stream?${query}`);
+    evtSourceRef.current = es;
+    es.onmessage = (e) => {
+      try {
+        const temp: any = JSON.parse(e.data);
+        // check if a key is exist
+        if (temp.hasOwnProperty("recipeTree")) {
+          const treeData = temp;
+          buildGraph(treeData);
+        }
+      } catch (err) {
+        console.error("Failed to parse SSE data", err);
+        onError("Failed to parse SSE data");
+        hasStartedRef.current = false;
+        if (evtSourceRef.current) {
+          evtSourceRef.current.close();
+          evtSourceRef.current = null;
+        }
+        return;
+      }
+    };
+    es.onerror = () => {
+      console.warn("SSE error/closed");
+      es.close();
+    };
+
+    // 3) cleanup
+    return () => {
+      es.close();
+    };
+  }, [loading, buildGraph, queryParams]);
+
   useEffect(() => {
     if (!trigger || hasStartedRef.current) return;
     if (evtSourceRef.current) {
@@ -456,9 +687,13 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
     if (rfInstance) {
       rfInstance.setViewport({ x: 0, y: 0, zoom: 1 });
     }
-
-    const cleanup = liveUpdate();
-    return cleanup;
+    if (queryParams.liveUpdate == true) {
+      const cleanup = liveUpdate();
+      return cleanup;
+    } else {
+      const cleanup = directTree();
+      return cleanup;
+    }
   }, [trigger, queryParams]);
 
   const findAncestorEdges = useCallback((nodeId: string, allEdges: Edge[]) => {
@@ -554,66 +789,14 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
     []
   );
 
-  const deleteNode = useCallback(() => {
-    // don’t delete the only node
-    if (nodes.length <= 1) return;
-
-    // pick a random non-root node
-    const deletable = nodes.filter((n) => n.id !== "1");
-    const nodeToDelete =
-      deletable[Math.floor(Math.random() * deletable.length)];
-
-    // find its incoming edge (so we know its parent)
-    const parentEdge = edges.find((e) => e.target === nodeToDelete.id);
-    const parentId = parentEdge?.source;
-
-    // find all outgoing edges (its children)
-    const childEdges = edges.filter((e) => e.source === nodeToDelete.id);
-
-    // remove the node & all its incident edges
-    let newNodes = nodes.filter((n) => n.id !== nodeToDelete.id);
-    let newEdges = edges.filter(
-      (e) => e.source !== nodeToDelete.id && e.target !== nodeToDelete.id
-    );
-
-    // re‑attach each of its children to its parent
-    if (parentId) {
-      const reconnected = childEdges.map((e) => ({
-        id: `e_${parentId}_${e.target}`,
-        source: parentId,
-        target: e.target,
-        type: "smoothstep",
-        markerStart: {
-          type: MarkerType.ArrowClosed,
-          width: 10,
-          height: 10,
-        },
-        style: {
-          strokeWidth: 2,
-        },
-      }));
-      newEdges = [...newEdges, ...reconnected];
-    }
-
-    setNodes(newNodes);
-    setEdges(newEdges);
-
-    // re‑layout so things stay neat
-    setTimeout(() => layoutFlow("DOWN", newNodes, newEdges), 0);
-  }, [nodes, edges, layoutFlow]);
-
   if (loading) return <p>Loading...</p>;
 
   return (
     <ReactFlowProvider>
       <div style={{ width: "100%", height: "100vh" }}>
-        <div style={{ position: "absolute", zIndex: 10, right: 10, top: 10 }}>
-          <button onClick={() => layoutFlow("DOWN")}>Fix Layout</button>
-          <button onClick={liveUpdate}>Live Update</button>
-          {/*
-          <button onClick={deleteNode}>Delete Node</button>
-          */}
-        </div>
+        <div
+          style={{ position: "absolute", zIndex: 10, right: 10, top: 10 }}
+        ></div>
         <ReactFlow
           nodeTypes={nodeTypes}
           nodes={nodes}
@@ -625,8 +808,8 @@ const TreeViewer: React.FC<TreeViewerProps> = ({
           onNodeMouseEnter={onNodeMouseEnter}
           onNodeMouseLeave={onNodeMouseLeave}
         >
-          <MiniMap />
-          <Controls />
+          <MiniMap nodeColor={minimapNodeColor} zoomable pannable />
+          <Controls onFitView={() => layoutFlow("DOWN")} />
           <Background />
         </ReactFlow>
       </div>

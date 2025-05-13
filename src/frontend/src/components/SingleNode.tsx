@@ -49,6 +49,12 @@ const labelStyle: React.CSSProperties = {
   color: "#333",
 };
 
+const imageStyle: React.CSSProperties = {
+  width: 30,
+  height: 30,
+  filter: "drop-shadow(0px 0px 4px rgba(0, 0, 0, 0.3))",
+};
+
 export default function SingleNode({ data }: { data: SingleData }) {
   return (
     <div style={containerStyle}>
@@ -61,6 +67,7 @@ export default function SingleNode({ data }: { data: SingleData }) {
             width={30}
             height={30}
             crossOrigin="anonymous"
+            style={imageStyle}
           ></Image>
           <span style={labelStyle}>{data.label}</span>
         </div>
