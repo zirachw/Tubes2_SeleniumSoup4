@@ -52,6 +52,22 @@
 [Next-url]: https://nextjs.org/
 [React-url]: https://react.dev/
 [Go-url]: https://go.dev/
+
+## ✨ Features
+
+### This project contains:
+
+1. **Search element name**
+2. **Single/Multiple recipes option**
+3. **Responsive website**
+4. **`(Bonus)` Recipe search live update**
+5. **`(Bonus)` Docker-nized project & deployment**
+
+### **Space for Improvement:** 
+
+1. **Bidirectional search**
+
+
 ## Algorithm Explanation
 ### BFS
 1. Group all elements into buckets based on their tier values.
