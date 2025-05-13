@@ -61,7 +61,7 @@
 2. **Single/Multiple recipes option**
 3. **Responsive website**
 4. **`(Bonus)` Recipe search live update**
-5. **`(Bonus)` Docker-nized project & deployment**
+5. **`(Bonus)` *containerized* project & deployment**
 
 ### **Space for Improvement:** 
 
@@ -124,3 +124,24 @@ Then:
    npm run dev
    ```
    > Opens at http://localhost:3000, API proxy to http://localhost:8080
+
+ ---
+ ## 📃 Miscellaneous
+
+ <div align="center">
+   
+ | No | Points | Ya | Tidak |
+ | --- | --- | --- | --- |
+ | 1 | Aplikasi dapat dijalankan. | ✔️ | |
+ | 2 | Aplikasi dapat memperoleh data *recipe* melalui scraping. | ✔️ | |
+ | 3 | Algoritma **Depth First Search** dan **Breadth First Search** dapat menemukan *recipe* elemen dengan benar. | ✔️ | |
+ | 4 | Aplikasi dapat menampilkan visualisasi *recipe* elemen yang dicari sesuai dengan spesifikasi.| ✔️ | |
+ | 5 | Aplikasi mengimplementasikan multithreading. | ✔️ | |
+ | 6 | Membuat laporan sesuai dengan spesifikasi. | ✔️ | |
+ | 7 | Membuat bonus video dan diunggah pada Youtube. | ✔️ | |
+ | 6 | **[Bonus]** Membuat algoritma pencarian *Bidirectional*. |  | ✔️|
+ | 7 | **[Bonus]** Membuat *Live Update* | ✔️ | |
+ | 8 | **[Bonus]** Aplikasi di-*containerize* dengan Docker. | ✔️ | |
+ | 8 | **[Bonus]** Aplikasi di-*deploy* dan dapat diakses melalui internet. | ✔️ | |
+
+ </div>
