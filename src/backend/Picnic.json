@@ -1,0 +1,138 @@
+{
+  "element": "Picnic",
+  "uniquePaths": 1,
+  "timeTaken": "27.5416ms",
+  "nodesExplored": 3571,
+  "nodesInTree": 19,
+  "recipeTree": {
+    "name": "Picnic",
+    "tier": 15,
+    "recipes": [
+      {
+        "left": {
+          "name": "Sandwich",
+          "tier": 14,
+          "id": 2
+        },
+        "right": {
+          "name": "Beach",
+          "tier": 4,
+          "recipes": [
+            {
+              "left": {
+                "name": "Sand",
+                "tier": 3,
+                "recipes": [
+                  {
+                    "left": {
+                      "name": "Stone",
+                      "tier": 2,
+                      "recipes": [
+                        {
+                          "left": {
+                            "name": "Earth",
+                            "tier": 0,
+                            "id": 8
+                          },
+                          "right": {
+                            "name": "Pressure",
+                            "tier": 1,
+                            "recipes": [
+                              {
+                                "left": {
+                                  "name": "Air",
+                                  "tier": 0,
+                                  "id": 10
+                                },
+                                "right": {
+                                  "name": "Air",
+                                  "tier": 0,
+                                  "id": 11
+                                }
+                              }
+                            ],
+                            "id": 9
+                          }
+                        }
+                      ],
+                      "id": 6
+                    },
+                    "right": {
+                      "name": "Air",
+                      "tier": 0,
+                      "id": 7
+                    }
+                  }
+                ],
+                "id": 4
+              },
+              "right": {
+                "name": "Lake",
+                "tier": 3,
+                "recipes": [
+                  {
+                    "left": {
+                      "name": "Pond",
+                      "tier": 2,
+                      "recipes": [
+                        {
+                          "left": {
+                            "name": "Puddle",
+                            "tier": 1,
+                            "recipes": [
+                              {
+                                "left": {
+                                  "name": "Water",
+                                  "tier": 0,
+                                  "id": 16
+                                },
+                                "right": {
+                                  "name": "Water",
+                                  "tier": 0,
+                                  "id": 17
+                                }
+                              }
+                            ],
+                            "id": 14
+                          },
+                          "right": {
+                            "name": "Puddle",
+                            "tier": 1,
+                            "recipes": [
+                              {
+                                "left": {
+                                  "name": "Water",
+                                  "tier": 0,
+                                  "id": 18
+                                },
+                                "right": {
+                                  "name": "Water",
+                                  "tier": 0,
+                                  "id": 19
+                                }
+                              }
+                            ],
+                            "id": 15
+                          }
+                        }
+                      ],
+                      "id": 12
+                    },
+                    "right": {
+                      "name": "Water",
+                      "tier": 0,
+                      "id": 13
+                    }
+                  }
+                ],
+                "id": 5
+              }
+            }
+          ],
+          "id": 3
+        }
+      }
+    ],
+    "id": 1
+  }
+}

@@ -11,7 +11,7 @@ type Target struct {
 	Name        string   `json:"name"`
 	Tier        int      `json:"tier"`
 	Recipes     []Recipe `json:"recipes"`
-	UniquePaths int      `json:"uniquePaths"`
+	UniquePaths uint64    `json:"uniquePaths"`
 	ID          uint64   `json:"id"`
 }
 

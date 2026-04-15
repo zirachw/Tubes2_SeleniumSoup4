@@ -1,0 +1,614 @@
+{
+  "element": "Bread",
+  "uniquePaths": 1,
+  "timeTaken": "118.8141ms",
+  "nodesExplored": 3193,
+  "nodesInTree": 87,
+  "recipeTree": {
+    "name": "Bread",
+    "tier": 13,
+    "recipes": [
+      {
+        "left": {
+          "name": "Dough",
+          "tier": 12,
+          "recipes": [
+            {
+              "left": {
+                "name": "Flour",
+                "tier": 11,
+                "recipes": [
+                  {
+                    "left": {
+                      "name": "Wheat",
+                      "tier": 10,
+                      "recipes": [
+                        {
+                          "left": {
+                            "name": "Grass",
+                            "tier": 9,
+                            "recipes": [
+                              {
+                                "left": {
+                                  "name": "Plant",
+                                  "tier": 8,
+                                  "recipes": [
+                                    {
+                                      "left": {
+                                        "name": "Rain",
+                                        "tier": 6,
+                                        "recipes": [
+                                          {
+                                            "left": {
+                                              "name": "Cloud",
+                                              "tier": 5,
+                                              "recipes": [
+                                                {
+                                                  "left": {
+                                                    "name": "Atmosphere",
+                                                    "tier": 4,
+                                                    "recipes": [
+                                                      {
+                                                        "left": {
+                                                          "name": "Air",
+                                                          "tier": 0,
+                                                          "id": 18
+                                                        },
+                                                        "right": {
+                                                          "name": "Planet",
+                                                          "tier": 3,
+                                                          "recipes": [
+                                                            {
+                                                              "left": {
+                                                                "name": "Continent",
+                                                                "tier": 2,
+                                                                "recipes": [
+                                                                  {
+                                                                    "left": {
+                                                                      "name": "Land",
+                                                                      "tier": 1,
+                                                                      "recipes": [
+                                                                        {
+                                                                          "left": {
+                                                                            "name": "Earth",
+                                                                            "tier": 0,
+                                                                            "id": 24
+                                                                          },
+                                                                          "right": {
+                                                                            "name": "Earth",
+                                                                            "tier": 0,
+                                                                            "id": 25
+                                                                          }
+                                                                        }
+                                                                      ],
+                                                                      "id": 22
+                                                                    },
+                                                                    "right": {
+                                                                      "name": "Land",
+                                                                      "tier": 1,
+                                                                      "recipes": [
+                                                                        {
+                                                                          "left": {
+                                                                            "name": "Earth",
+                                                                            "tier": 0,
+                                                                            "id": 26
+                                                                          },
+                                                                          "right": {
+                                                                            "name": "Earth",
+                                                                            "tier": 0,
+                                                                            "id": 27
+                                                                          }
+                                                                        }
+                                                                      ],
+                                                                      "id": 23
+                                                                    }
+                                                                  }
+                                                                ],
+                                                                "id": 20
+                                                              },
+                                                              "right": {
+                                                                "name": "Continent",
+                                                                "tier": 2,
+                                                                "recipes": [
+                                                                  {
+                                                                    "left": {
+                                                                      "name": "Land",
+                                                                      "tier": 1,
+                                                                      "recipes": [
+                                                                        {
+                                                                          "left": {
+                                                                            "name": "Earth",
+                                                                            "tier": 0,
+                                                                            "id": 30
+                                                                          },
+                                                                          "right": {
+                                                                            "name": "Earth",
+                                                                            "tier": 0,
+                                                                            "id": 31
+                                                                          }
+                                                                        }
+                                                                      ],
+                                                                      "id": 28
+                                                                    },
+                                                                    "right": {
+                                                                      "name": "Land",
+                                                                      "tier": 1,
+                                                                      "recipes": [
+                                                                        {
+                                                                          "left": {
+                                                                            "name": "Earth",
+                                                                            "tier": 0,
+                                                                            "id": 32
+                                                                          },
+                                                                          "right": {
+                                                                            "name": "Earth",
+                                                                            "tier": 0,
+                                                                            "id": 33
+                                                                          }
+                                                                        }
+                                                                      ],
+                                                                      "id": 29
+                                                                    }
+                                                                  }
+                                                                ],
+                                                                "id": 21
+                                                              }
+                                                            }
+                                                          ],
+                                                          "id": 19
+                                                        }
+                                                      }
+                                                    ],
+                                                    "id": 16
+                                                  },
+                                                  "right": {
+                                                    "name": "Mist",
+                                                    "tier": 1,
+                                                    "recipes": [
+                                                      {
+                                                        "left": {
+                                                          "name": "Air",
+                                                          "tier": 0,
+                                                          "id": 34
+                                                        },
+                                                        "right": {
+                                                          "name": "Water",
+                                                          "tier": 0,
+                                                          "id": 35
+                                                        }
+                                                      }
+                                                    ],
+                                                    "id": 17
+                                                  }
+                                                }
+                                              ],
+                                              "id": 14
+                                            },
+                                            "right": {
+                                              "name": "Heat",
+                                              "tier": 2,
+                                              "recipes": [
+                                                {
+                                                  "left": {
+                                                    "name": "Air",
+                                                    "tier": 0,
+                                                    "id": 36
+                                                  },
+                                                  "right": {
+                                                    "name": "Energy",
+                                                    "tier": 1,
+                                                    "recipes": [
+                                                      {
+                                                        "left": {
+                                                          "name": "Fire",
+                                                          "tier": 0,
+                                                          "id": 38
+                                                        },
+                                                        "right": {
+                                                          "name": "Fire",
+                                                          "tier": 0,
+                                                          "id": 39
+                                                        }
+                                                      }
+                                                    ],
+                                                    "id": 37
+                                                  }
+                                                }
+                                              ],
+                                              "id": 15
+                                            }
+                                          }
+                                        ],
+                                        "id": 12
+                                      },
+                                      "right": {
+                                        "name": "Soil",
+                                        "tier": 7,
+                                        "recipes": [
+                                          {
+                                            "left": {
+                                              "name": "Earth",
+                                              "tier": 0,
+                                              "id": 40
+                                            },
+                                            "right": {
+                                              "name": "Life",
+                                              "tier": 6,
+                                              "recipes": [
+                                                {
+                                                  "left": {
+                                                    "name": "Primordial soup",
+                                                    "tier": 5,
+                                                    "recipes": [
+                                                      {
+                                                        "left": {
+                                                          "name": "Lava",
+                                                          "tier": 1,
+                                                          "recipes": [
+                                                            {
+                                                              "left": {
+                                                                "name": "Earth",
+                                                                "tier": 0,
+                                                                "id": 46
+                                                              },
+                                                              "right": {
+                                                                "name": "Fire",
+                                                                "tier": 0,
+                                                                "id": 47
+                                                              }
+                                                            }
+                                                          ],
+                                                          "id": 44
+                                                        },
+                                                        "right": {
+                                                          "name": "Sea",
+                                                          "tier": 4,
+                                                          "recipes": [
+                                                            {
+                                                              "left": {
+                                                                "name": "Lake",
+                                                                "tier": 3,
+                                                                "recipes": [
+                                                                  {
+                                                                    "left": {
+                                                                      "name": "Pond",
+                                                                      "tier": 2,
+                                                                      "recipes": [
+                                                                        {
+                                                                          "left": {
+                                                                            "name": "Puddle",
+                                                                            "tier": 1,
+                                                                            "recipes": [
+                                                                              {
+                                                                                "left": {
+                                                                                  "name": "Water",
+                                                                                  "tier": 0,
+                                                                                  "id": 54
+                                                                                },
+                                                                                "right": {
+                                                                                  "name": "Water",
+                                                                                  "tier": 0,
+                                                                                  "id": 55
+                                                                                }
+                                                                              }
+                                                                            ],
+                                                                            "id": 52
+                                                                          },
+                                                                          "right": {
+                                                                            "name": "Puddle",
+                                                                            "tier": 1,
+                                                                            "recipes": [
+                                                                              {
+                                                                                "left": {
+                                                                                  "name": "Water",
+                                                                                  "tier": 0,
+                                                                                  "id": 56
+                                                                                },
+                                                                                "right": {
+                                                                                  "name": "Water",
+                                                                                  "tier": 0,
+                                                                                  "id": 57
+                                                                                }
+                                                                              }
+                                                                            ],
+                                                                            "id": 53
+                                                                          }
+                                                                        }
+                                                                      ],
+                                                                      "id": 50
+                                                                    },
+                                                                    "right": {
+                                                                      "name": "Water",
+                                                                      "tier": 0,
+                                                                      "id": 51
+                                                                    }
+                                                                  }
+                                                                ],
+                                                                "id": 48
+                                                              },
+                                                              "right": {
+                                                                "name": "Lake",
+                                                                "tier": 3,
+                                                                "recipes": [
+                                                                  {
+                                                                    "left": {
+                                                                      "name": "Pond",
+                                                                      "tier": 2,
+                                                                      "recipes": [
+                                                                        {
+                                                                          "left": {
+                                                                            "name": "Puddle",
+                                                                            "tier": 1,
+                                                                            "recipes": [
+                                                                              {
+                                                                                "left": {
+                                                                                  "name": "Water",
+                                                                                  "tier": 0,
+                                                                                  "id": 62
+                                                                                },
+                                                                                "right": {
+                                                                                  "name": "Water",
+                                                                                  "tier": 0,
+                                                                                  "id": 63
+                                                                                }
+                                                                              }
+                                                                            ],
+                                                                            "id": 60
+                                                                          },
+                                                                          "right": {
+                                                                            "name": "Puddle",
+                                                                            "tier": 1,
+                                                                            "recipes": [
+                                                                              {
+                                                                                "left": {
+                                                                                  "name": "Water",
+                                                                                  "tier": 0,
+                                                                                  "id": 64
+                                                                                },
+                                                                                "right": {
+                                                                                  "name": "Water",
+                                                                                  "tier": 0,
+                                                                                  "id": 65
+                                                                                }
+                                                                              }
+                                                                            ],
+                                                                            "id": 61
+                                                                          }
+                                                                        }
+                                                                      ],
+                                                                      "id": 58
+                                                                    },
+                                                                    "right": {
+                                                                      "name": "Water",
+                                                                      "tier": 0,
+                                                                      "id": 59
+                                                                    }
+                                                                  }
+                                                                ],
+                                                                "id": 49
+                                                              }
+                                                            }
+                                                          ],
+                                                          "id": 45
+                                                        }
+                                                      }
+                                                    ],
+                                                    "id": 42
+                                                  },
+                                                  "right": {
+                                                    "name": "Volcano",
+                                                    "tier": 2,
+                                                    "recipes": [
+                                                      {
+                                                        "left": {
+                                                          "name": "Lava",
+                                                          "tier": 1,
+                                                          "recipes": [
+                                                            {
+                                                              "left": {
+                                                                "name": "Earth",
+                                                                "tier": 0,
+                                                                "id": 68
+                                                              },
+                                                              "right": {
+                                                                "name": "Fire",
+                                                                "tier": 0,
+                                                                "id": 69
+                                                              }
+                                                            }
+                                                          ],
+                                                          "id": 66
+                                                        },
+                                                        "right": {
+                                                          "name": "Earth",
+                                                          "tier": 0,
+                                                          "id": 67
+                                                        }
+                                                      }
+                                                    ],
+                                                    "id": 43
+                                                  }
+                                                }
+                                              ],
+                                              "id": 41
+                                            }
+                                          }
+                                        ],
+                                        "id": 13
+                                      }
+                                    }
+                                  ],
+                                  "id": 10
+                                },
+                                "right": {
+                                  "name": "Land",
+                                  "tier": 1,
+                                  "recipes": [
+                                    {
+                                      "left": {
+                                        "name": "Earth",
+                                        "tier": 0,
+                                        "id": 70
+                                      },
+                                      "right": {
+                                        "name": "Earth",
+                                        "tier": 0,
+                                        "id": 71
+                                      }
+                                    }
+                                  ],
+                                  "id": 11
+                                }
+                              }
+                            ],
+                            "id": 8
+                          },
+                          "right": {
+                            "name": "Field",
+                            "tier": 5,
+                            "recipes": [
+                              {
+                                "left": {
+                                  "name": "Plow",
+                                  "tier": 4,
+                                  "recipes": [
+                                    {
+                                      "left": {
+                                        "name": "Earth",
+                                        "tier": 0,
+                                        "id": 74
+                                      },
+                                      "right": {
+                                        "name": "Metal",
+                                        "tier": 3,
+                                        "recipes": [
+                                          {
+                                            "left": {
+                                              "name": "Stone",
+                                              "tier": 2,
+                                              "recipes": [
+                                                {
+                                                  "left": {
+                                                    "name": "Earth",
+                                                    "tier": 0,
+                                                    "id": 78
+                                                  },
+                                                  "right": {
+                                                    "name": "Pressure",
+                                                    "tier": 1,
+                                                    "recipes": [
+                                                      {
+                                                        "left": {
+                                                          "name": "Air",
+                                                          "tier": 0,
+                                                          "id": 80
+                                                        },
+                                                        "right": {
+                                                          "name": "Air",
+                                                          "tier": 0,
+                                                          "id": 81
+                                                        }
+                                                      }
+                                                    ],
+                                                    "id": 79
+                                                  }
+                                                }
+                                              ],
+                                              "id": 76
+                                            },
+                                            "right": {
+                                              "name": "Fire",
+                                              "tier": 0,
+                                              "id": 77
+                                            }
+                                          }
+                                        ],
+                                        "id": 75
+                                      }
+                                    }
+                                  ],
+                                  "id": 72
+                                },
+                                "right": {
+                                  "name": "Land",
+                                  "tier": 1,
+                                  "recipes": [
+                                    {
+                                      "left": {
+                                        "name": "Earth",
+                                        "tier": 0,
+                                        "id": 82
+                                      },
+                                      "right": {
+                                        "name": "Earth",
+                                        "tier": 0,
+                                        "id": 83
+                                      }
+                                    }
+                                  ],
+                                  "id": 73
+                                }
+                              }
+                            ],
+                            "id": 9
+                          }
+                        }
+                      ],
+                      "id": 6
+                    },
+                    "right": {
+                      "name": "Stone",
+                      "tier": 2,
+                      "recipes": [
+                        {
+                          "left": {
+                            "name": "Earth",
+                            "tier": 0,
+                            "id": 84
+                          },
+                          "right": {
+                            "name": "Pressure",
+                            "tier": 1,
+                            "recipes": [
+                              {
+                                "left": {
+                                  "name": "Air",
+                                  "tier": 0,
+                                  "id": 86
+                                },
+                                "right": {
+                                  "name": "Air",
+                                  "tier": 0,
+                                  "id": 87
+                                }
+                              }
+                            ],
+                            "id": 85
+                          }
+                        }
+                      ],
+                      "id": 7
+                    }
+                  }
+                ],
+                "id": 4
+              },
+              "right": {
+                "name": "Water",
+                "tier": 0,
+                "id": 5
+              }
+            }
+          ],
+          "id": 2
+        },
+        "right": {
+          "name": "Fire",
+          "tier": 0,
+          "id": 3
+        }
+      }
+    ],
+    "id": 1
+  }
+}

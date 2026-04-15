@@ -18,7 +18,7 @@ import (
 
 type ResultData struct {
 	Element       string      `json:"element"`
-	UniquePaths   int         `json:"uniquePaths"`
+	UniquePaths   uint64      `json:"uniquePaths"`
 	TimeTaken     string      `json:"timeTaken"`
 	NodesExplored int         `json:"nodesExplored"`
 	NodesInTree   int         `json:"nodesInTree"`
@@ -61,17 +61,19 @@ func sseHandler(recipeMap map[string]scraper.ElementData) http.Handler {
 
 		query := r.URL.Query()
 
-		var count int = 0
+		var count uint64 = 0
 		if query.Get("count") != "" {
 			if query.Get("count") == "all" {
 				count = 1000 // kata razi
 			} else {
 				var err error
-				count, err = strconv.Atoi(query.Get("count"))
+				var countInt int
+				countInt, err = strconv.Atoi(query.Get("count"))
 				if err != nil {
 					http.Error(w, "Invalid count parameter", http.StatusBadRequest)
 					return
 				}
+				count = uint64(countInt)
 			}
 		}
 

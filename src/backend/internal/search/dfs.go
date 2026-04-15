@@ -9,15 +9,13 @@ import (
 	"github.com/zirachw/Tubes2_SeleniumSoup4/internal/scraper"
 )
 
-/**
- *  A memoized recursive DFS returning how many full root → leaf chains an element can produce.
- *  It also updates the provided nodeCounter for tracking node exploration.
- */
-func countPaths(recipeData map[string]scraper.ElementData, name string, nodeCounter *uint64) int {
+// A memoized recursive DFS returning how many full root → leaf chains an element can produce.
+// It also updates the provided nodeCounter for tracking node exploration.
+func countPaths(recipeData map[string]scraper.ElementData, name string, nodeCounter *uint64) uint64 {
 	atomic.AddUint64(nodeCounter, 1)
-	memo := make(map[string]int)
-	var dfs func(string) int
-	dfs = func(el string) int {
+	memo := make(map[string]uint64)
+	var dfs func(string) uint64
+	dfs = func(el string) uint64 {
 		atomic.AddUint64(nodeCounter, 1)
 		if v, ok := memo[el]; ok {
 			return v
@@ -27,7 +25,8 @@ func countPaths(recipeData map[string]scraper.ElementData, name string, nodeCoun
 			memo[el] = 1
 			return 1
 		}
-		sum := 0
+
+		sum := uint64(0)
 		for _, rec := range data.Recipes {
 			ln, rn := rec[0], rec[1]
 			ld, lok := recipeData[ln]
@@ -49,33 +48,28 @@ func countPaths(recipeData map[string]scraper.ElementData, name string, nodeCoun
 	return dfs(name)
 }
 
-/**
- *  BuildSubtreeInternal invokes DFSSearchInternal on one element up to maxPaths,
- *  Streaming its own nested events, and returns the built *Element + how many paths.
- */
+// buildSubtreeInternal invokes DFS on one element up to maxPaths, streaming its own nested events,
+// and returns the built *Element + how many paths.
 func buildSubtreeInternal(
 	recipeData map[string]scraper.ElementData,
 	elementName string,
-	maxPaths int,
+	maxPaths uint64,
 	updateCh chan<- Update,
 	nextID func() uint64,
 	forcedID uint64,
 	nodeCounter *uint64,
-) (*Element, int) {
+) (*Element, uint64) {
 	var subtree Tree
 	DFS(recipeData, elementName, maxPaths, &subtree, updateCh, nextID, forcedID, nodeCounter)
 	e := &Element{Name: subtree.Name, Tier: subtree.Tier, Recipes: subtree.Recipes, ID: subtree.ID}
 	return e, subtree.UniquePaths
 }
 
-/**
- *  DFS is the main search function that builds a recipe tree for the target element.
- *  It returns the number of nodes explored during the search.
- */
+// DFS builds a recipe tree for the target element and returns the number of nodes explored.
 func DFS(
 	recipeData map[string]scraper.ElementData,
 	targetName string,
-	maxUniquePaths int,
+	maxUniquePaths uint64,
 	outPtr *Tree,
 	updateCh chan<- Update,
 	nextID func() uint64,
@@ -104,13 +98,16 @@ func DFS(
 
 	// —— Phase 1: parallel countPaths with pre-filter ——
 	numWorkers := runtime.NumCPU()
-	type countJob struct {
-		idx         int
-		left, right string
-	}
-	type countRes struct {
-		idx, leftCnt, rightCnt int
-	}
+
+type countJob struct {
+	idx         int
+	left, right string
+}
+
+type countRes struct {
+	idx           int
+	leftCount, rightCount uint64
+}
 
 	jobsCount := make(chan countJob, len(data.Recipes))
 	resultsCount := make(chan countRes, len(data.Recipes))
@@ -145,27 +142,28 @@ func DFS(
 	close(resultsCount)
 
 	type recInfo struct {
-		left, right           string
-		leftCount, rightCount int
-	}
+	left, right           string
+	leftCount, rightCount uint64
+}
 	infos := make([]recInfo, 0, len(data.Recipes))
 	for res := range resultsCount {
 		rec := data.Recipes[res.idx]
-		infos = append(infos, recInfo{rec[0], rec[1], res.leftCnt, res.rightCnt})
+		infos = append(infos, recInfo{rec[0], rec[1], res.leftCount, res.rightCount})
 	}
 
-	// —— Phase 2: parallel buildSubtreeInternal with shallow-leaf ——
-	type buildJob struct {
-		idx                   int
-		leftName, rightName   string
-		leftCount, rightCount int
-		take                  int
-	}
-	type buildRes struct {
-		idx                   int
-		builtLeft, builtRight *Element
-		usedPaths             int
-	}
+	// —— Phase 2: parallel buildSubtreeInternal with pruning ——
+
+type buildJob struct {
+	idx                    int
+	leftName, rightName    string
+	leftCount, rightCount, take uint64
+}
+
+type buildRes struct {
+	idx                    int
+	builtLeft, builtRight  *Element
+	usedPaths              uint64
+}
 
 	jobsBuild := make(chan buildJob, len(infos))
 	resultsBuild := make(chan buildRes, len(infos))
@@ -195,7 +193,7 @@ func DFS(
 				}
 
 				var leftElem, rightElem *Element
-				var used int
+				var used uint64
 
 				if job.leftCount == 0 || job.rightCount == 0 {
 					ld := recipeData[job.leftName]
@@ -203,10 +201,9 @@ func DFS(
 					leftElem = &Element{Name: job.leftName, Tier: ld.Tier, ID: leftID}
 					rightElem = &Element{Name: job.rightName, Tier: rd.Tier, ID: rightID}
 					used = 0
-
 				} else {
 					full := job.leftCount * job.rightCount
-					var leftNeed, rightNeed int
+					var leftNeed, rightNeed uint64
 					if job.take == full {
 						leftNeed, rightNeed = job.leftCount, job.rightCount
 					} else {
@@ -228,10 +225,10 @@ func DFS(
 		}()
 	}
 
-	// Schedule build jobs (always include the recipe, but prune to remaining)
+	// Schedule build jobs with pruning
 	remaining := maxUniquePaths
 	for idx, info := range infos {
-		if remaining <= 0 {
+		if remaining == 0 {
 			break
 		}
 		total := info.leftCount * info.rightCount

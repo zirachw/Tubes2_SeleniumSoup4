@@ -15,7 +15,7 @@ import (
 var (
 	flagElement = flag.String("e", "Airplane",
 		"element to search for")
-	flagPaths = flag.Int("p", 1,
+	flagPaths = flag.Uint64("p", 1,
 		"max unique paths (if 1 uses DFSSearch, >1 uses DFSSearchParallel)")
 	flagOutput = flag.String("o", "",
 		"optional output JSON file name (e.g. result.json)")
@@ -23,7 +23,7 @@ var (
 
 type ResultData struct {
 	Element       string      `json:"element"`
-	UniquePaths   int         `json:"uniquePaths"`
+	UniquePaths   uint64      `json:"uniquePaths"`
 	TimeTaken     string      `json:"timeTaken"`
 	NodesExplored uint64      `json:"nodesExplored"`
 	NodesInTree   int         `json:"nodesInTree"`

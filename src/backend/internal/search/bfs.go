@@ -17,7 +17,7 @@ import (
 func BFS(
 	recipeMap map[string]scraper.ElementData,
 	targetName string,
-	maxPaths int,
+	maxPaths uint64,
 ) ([]*Element, uint64, error) {
 
 	// Use a local node counter instead of a global variable
@@ -71,9 +71,9 @@ func BFS(
 					}
 					for _, L := range leftList {
 						for _, R := range rightList {
-							if len(examples) >= maxPaths {
-								break
-							}
+                            if uint64(len(examples)) >= maxPaths {
+                                break
+                            }
 							if data.Tier <= L.Tier || data.Tier <= R.Tier {
 								continue
 							}
@@ -84,11 +84,11 @@ func BFS(
 								Recipes: []Recipe{{Left: L, Right: R}},
 							})
 						}
-						if len(examples) >= maxPaths {
+						if uint64(len(examples)) >= maxPaths {
 							break
 						}
 					}
-					if len(examples) >= maxPaths {
+					if uint64(len(examples)) >= maxPaths {
 						break
 					}
 				}
@@ -112,7 +112,7 @@ func BFS(
 	if !ok || len(result) == 0 {
 		return nil, nodeCounter, nil
 	}
-	if len(result) > maxPaths {
+	if uint64(len(result)) > maxPaths {
 		result = result[:maxPaths]
 	}
 	return result, nodeCounter, nil
@@ -133,7 +133,7 @@ func CreateFullTree(
         Name:        name,
         Tier:        0,
         Recipes:     nil,
-        UniquePaths: len(paths),
+        UniquePaths: uint64(len(paths)),
         ID:          0,
     }
     if len(paths) > 0 {

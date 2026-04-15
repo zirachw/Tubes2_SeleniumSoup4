@@ -15,14 +15,14 @@ import (
 
 var (
     flagElement = flag.String("e", "",  "element to search for (case‐insensitive)")
-    flagPaths   = flag.Int("p", 1,     "max unique paths")
+    flagPaths   = flag.Uint64("p", 1,     "max unique paths")
     flagUpdates = flag.Bool("u", false, "stream live updates")
     flagOutput  = flag.String("o", "",  "optional output JSON file")
 )
 
 type ResultData struct {
     Element       string      `json:"element"`
-    UniquePaths   int         `json:"uniquePaths"`
+    UniquePaths   uint64      `json:"uniquePaths"`
     TimeTaken     string      `json:"timeTaken"`
     NodesExplored uint64      `json:"nodesExplored"`
     NodesInTree   int         `json:"nodesInTree"`
